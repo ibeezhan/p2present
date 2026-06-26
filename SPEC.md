@@ -132,6 +132,20 @@ The slide deck. `sources` is likewise an **ordered fallback list** of URLs.
 
 - `deck.slideCount` *(optional)* — total slides, used for the counter when the
   deck engine can't report its own count.
+- `deck.thumbnails` *(optional)* — authored slide previews for the scrubber.
+  Either an array of image URLs indexed by slide (1-based), or an array of
+  `{ "slide": N, "src": "…" }`. URLs follow the same transport rules
+  (plain / `ipfs://` / `magnet:`) and resolve against the manifest URL if
+  relative. **PDF decks auto-render** scrubber thumbnails from the page, so this
+  is only needed for HTML decks (or to override). Example:
+
+  ```json
+  "deck": {
+    "type": "html",
+    "sources": [{ "src": "slides/index.html" }],
+    "thumbnails": ["thumbs/1.png", "thumbs/2.png"]
+  }
+  ```
 - **P2P decks.** A deck `src` may also be `ipfs://…` (expanded to the gateway
   fallback list at load) or a `magnet:` link (the `.html` / `.pdf` is fetched
   from the swarm and shown from a Blob URL). So the deck — not just the video —
@@ -302,6 +316,40 @@ It is copied to the clipboard (and the address bar is updated). Examples:
 
 # the decoded value can equally be  ipfs://bafy…/p2present.json  or  magnet:?xt=…
 ```
+
+### Deep-links (`#t=…&slide=…`)
+
+A **hash fragment** opens the player at a precise spot and composes with any
+loader above:
+
+| Hash key | Meaning |
+|----------|---------|
+| `t`     | seconds into the video (float; the player seeks here on load) |
+| `slide` | 1-based slide number (the deck jumps here on load) |
+
+Either key may be omitted; if only `t` is given, the slide is derived from the
+timing cues at that time. Examples:
+
+```
+…/p2present/?p=demo#t=575&slide=13      # open at 9:35, slide 13
+…/p2present/?src=<base64>#t=120          # open a shared deck at 2:00
+```
+
+As you navigate, the player rewrites the hash (debounced, via
+`history.replaceState`) so the address bar always points at the current spot, and
+the **📍 This spot** button copies a `?src=<base64>#t=…&slide=…` link to exactly
+where you are.
+
+---
+
+## Tooling
+
+- **[Builder](https://ibeezhan.github.io/p2present/builder/)** (`docs/builder/`) —
+  assemble/edit a manifest visually with live JSON + validation against this
+  schema, then download / copy / open-in-player. See [AUTHORING.md](AUTHORING.md).
+- **[Host helper](https://ibeezhan.github.io/p2present/host/)** (`docs/host/`) —
+  pin assets to IPFS or seed a WebTorrent in-browser to produce `ipfs://` /
+  `magnet:` references. See [HOSTING.md](HOSTING.md).
 
 ---
 

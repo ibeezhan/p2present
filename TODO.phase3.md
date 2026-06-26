@@ -37,8 +37,8 @@ Living checklist for the phase-3 overnight job. Status legend: ⬜ todo · 🔄 
 - ✅ Smoke: helper page loads (mock pin call when no token)
 
 ## 5. Docs review (LAST)
-- ⬜ README, SPEC.md, HOSTING/SETUP, AUTHORING guide, JSON schema, docs index
-- ⬜ No stale refs (no v0), all links work, examples valid
+- ✅ README, SPEC.md, HOSTING/SETUP, AUTHORING guide, JSON schema, docs index
+- ✅ No stale refs (no v0), all links work, examples valid
 
 ## Verify / finish
 - ⬜ `npm test` (unit) + `npm run smoke` (headless 390/780/1280) green, 0 real console errors
