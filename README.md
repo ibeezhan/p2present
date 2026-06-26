@@ -13,6 +13,42 @@ The demo loads by default: the *"Rage-Coding the Mother of All VPNs"* deck (23 s
 
 ---
 
+## Screenshots
+
+Captured with the headless-Chrome smoke harness (`npm run smoke`).
+
+**Player — slides synced to the YouTube talk (1280 / 780 / 390 px):**
+
+![Demo at 1280px — split layout, slides + YouTube video + synced caption](docs/screenshots/demo-youtube-1280.png)
+
+| 780 px | 390 px (mobile) |
+|--------|-----------------|
+| ![Demo at 780px](docs/screenshots/demo-youtube-780.png) | ![Demo at 390px](docs/screenshots/demo-youtube-390.png) |
+
+**`mp4` provider via source fallback** — a manifest whose first `ipfs` source is unreachable falls through to a self-hosted `mp4`, which plays in the native `<video>`:
+
+![mp4 provider after ipfs→mp4 fallback](docs/screenshots/mp4-fallback.png)
+
+**Fullscreen auto-hiding controls** — in fullscreen/maximized the control bar floats as a fixed overlay that fades out after ~2.5s and returns on activity (never reflowing the slides/video):
+
+![Immersive overlay controls in fullscreen](docs/screenshots/fullscreen-controls.png)
+
+**Decentralized resolver — `ipfs://` and `magnet:` source states:**
+
+| `ipfs://` (gateway fallback) | `magnet:` (WebTorrent) |
+|------------------------------|------------------------|
+| ![Loading an ipfs:// source — every gateway tried in order](docs/screenshots/ipfs-loading.png) | ![Loading a magnet: source over WebTorrent](docs/screenshots/magnet-loading.png) |
+
+> **Headless note.** The `ipfs://` / `magnet:` shots use deliberately unreachable
+> demo CIDs/hashes (and run in a sandbox with no IPFS peers), so they capture the
+> **resolver input + real loading / gateway-fallback UI** rather than completed
+> p2p playback — the `ipfs` panel shows every gateway being tried in order, and
+> the `magnet` panel shows the live swarm fetch. With a real CID/magnet and peers
+> available, the same code streams straight into the player (the `mp4`-fallback
+> shot above exercises the identical `<video>` path that `webtorrent`/`ipfs` feed).
+
+---
+
 ## What's in the box
 
 - **Flexible player layout** — slides + video with a **draggable divider** and **four layout modes** (split · slides-focus · video-focus · overlap picture-in-picture), animated transitions, **fullscreen**, and a responsive mobile stack. The divider ratio, mode, and PiP position/size persist across visits. See [Layout controls](#layout-controls).
