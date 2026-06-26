@@ -1,0 +1,48 @@
+/* =============================================================================
+   MoaV — Spacing, Radius, Shadow & Motion Tokens
+   Marketing surfaces breathe (120px sections, 12px radii); the ops/terminal
+   surfaces are tight and dense (4–6px radii, compact padding).
+   ============================================================================= */
+
+:root {
+    /* Spacing scale (4px base) ------------------------------------------------ */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-30: 120px;   /* marketing section padding */
+
+    --container-width: 1200px;
+    --dashboard-width: 1100px;
+    --section-padding: 120px;
+
+    /* Radii ------------------------------------------------------------------- */
+    --radius-xs:   3px;    /* tags, terminal chips */
+    --radius-sm:   6px;    /* ops cards, buttons */
+    --radius-md:   8px;    /* marketing buttons, inputs */
+    --radius-lg:   12px;   /* marketing cards, install box */
+    --radius-pill: 999px;  /* status pills, switches */
+
+    /* Shadows ----------------------------------------------------------------- */
+    --shadow-card:  0 4px 12px rgba(0, 0, 0, 0.30);
+    --shadow-pop:   0 12px 32px rgba(0, 0, 0, 0.45);
+    --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.50);
+    /* Neon glows live in colors.css (--moav-glow-*) */
+
+    /* Borders ----------------------------------------------------------------- */
+    --border-width: 1px;
+
+    /* Motion ------------------------------------------------------------------ */
+    --transition:      0.3s ease;          /* @kind other */
+    --transition-fast: 0.15s ease;         /* @kind other */
+    --ease-out:        cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+    --lift:            translateY(-2px);    /* @kind other */
+    --lift-lg:         translateY(-4px);    /* @kind other */
+}

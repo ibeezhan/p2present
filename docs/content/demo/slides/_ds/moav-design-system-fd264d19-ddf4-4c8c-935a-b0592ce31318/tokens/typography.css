@@ -1,0 +1,47 @@
+/* =============================================================================
+   MoaV — Typography Tokens
+   Inter for UI/marketing prose; JetBrains Mono for everything technical
+   (commands, ports, protocol names, the ASCII wordmark, dashboard chrome).
+   The brand leans heavily monospace — it is a tool for engineers.
+   ============================================================================= */
+
+:root {
+    /* Families ---------------------------------------------------------------- */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+
+    /* Type scale (px-based; marketing display is fluid via clamp at use site) -- */
+    --text-2xs:  11px;   /* fine print, disclaimers */
+    --text-xs:   12px;   /* mono labels, ports, tags */
+    --text-sm:   13px;   /* dense UI, code blocks */
+    --text-base: 15px;   /* body default */
+    --text-md:   17px;   /* lead paragraphs */
+    --text-lg:   20px;   /* card titles */
+    --text-xl:   24px;   /* sub-section heads */
+    --text-2xl:  32px;   /* section titles (min) */
+    --text-3xl:  40px;   /* section titles (max) */
+    --text-4xl:  56px;   /* hero tagline */
+
+    /* Fluid display sizes (marketing hero / section titles) ------------------- */
+    --display-hero:    clamp(32px, 6vw, 56px);   /* @kind font */
+    --display-section: clamp(28px, 4vw, 40px);   /* @kind font */
+    --display-sub:     clamp(16px, 2.5vw, 20px); /* @kind font */
+
+    /* Weights ----------------------------------------------------------------- */
+    --weight-regular:  400;
+    --weight-medium:   500;
+    --weight-semibold: 600;
+    --weight-bold:     700;
+
+    /* Line heights ------------------------------------------------------------ */
+    --leading-tight:   1.2;    /* display, ASCII art */
+    --leading-snug:    1.4;    /* headings, code */
+    --leading-normal:  1.6;    /* body */
+    --leading-relaxed: 1.8;    /* lead / subtitles */
+
+    /* Letter spacing ---------------------------------------------------------- */
+    --tracking-tight:  -0.02em;  /* large mono headings (logo wordmark feel) */
+    --tracking-normal: 0;
+    --tracking-wide:   0.05em;   /* uppercase mono labels */
+    --tracking-wider:  0.15em;   /* eyebrow / overline */
+}

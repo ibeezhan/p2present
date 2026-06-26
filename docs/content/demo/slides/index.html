@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en" class="signal-cyan atmo-circuit voice-terminal">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rage-Coding the Mother of All VPNs — Berlin 2026</title>
+
+<link rel="stylesheet" href="_ds/moav-design-system-fd264d19-ddf4-4c8c-935a-b0592ce31318/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/moav-design-system-fd264d19-ddf4-4c8c-935a-b0592ce31318/tokens/colors.css">
+<link rel="stylesheet" href="_ds/moav-design-system-fd264d19-ddf4-4c8c-935a-b0592ce31318/tokens/typography.css">
+<link rel="stylesheet" href="_ds/moav-design-system-fd264d19-ddf4-4c8c-935a-b0592ce31318/tokens/spacing.css">
+
+<style>
+  :root{
+    /* type scale (1920×1080) */
+    --type-kicker: 26px;
+    --type-title: 76px;
+    --type-display: 124px;
+    --type-huge: 220px;
+    --type-subtitle: 44px;
+    --type-body: 32px;
+    --type-lead: 36px;
+    --type-small: 24px;
+    --type-mono: 28px;
+    /* frame */
+    --pad-x: 112px;
+    --pad-y: 88px;
+    --gap: 40px;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; background:#000; }
+  deck-stage:not(:defined){ visibility:hidden; }
+
+  /* ---- slide frame ---------------------------------------------------- */
+  .slide{
+    --ac: var(--moav-cyan);
+    --ac-dim: var(--moav-cyan-dim);
+    --ac-line: var(--moav-cyan-line);
+    width:100%; height:100%;
+    background: var(--moav-ink-900);
+    color: var(--moav-white);
+    font-family: var(--font-sans);
+    padding: var(--pad-y) var(--pad-x);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    position:relative;
+    isolation:isolate;
+  }
+  .slide.warm{
+    --ac: #ff8c00;
+    --ac-dim: rgba(255,140,0,0.12);
+    --ac-line: rgba(255,140,0,0.38);
+  }
+  .slide.danger{
+    --ac: var(--moav-red);
+    --ac-dim: var(--moav-red-dim, rgba(255,71,87,0.12));
+    --ac-line: rgba(255,71,87,0.40);
+  }
+  /* radial glow seed, hero/close only */
+  .slide.glow{
+    background: radial-gradient(ellipse 120% 80% at 50% -10%, var(--moav-ink-400) 0%, var(--moav-ink-900) 55%);
+  }
+
+  /* film-grain / noise texture (replaces the old circuit grid) — on every slide */
+  .slide::before{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='240'%20height='240'%20filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 240px 240px;
+    opacity: 0.09;
+    mix-blend-mode: screen;
+  }
+
+  /* PDF / print export: drop the grain + scanline overlays. The feTurbulence
+     noise and mix-blend-mode rasterize into a huge per-page bitmap (25MB+) and
+     can blank the page. Screen rendering is unchanged. */
+  @media print {
+    .slide::before, .slide::after { display: none !important; background: none !important; }
+    /* Chrome's PDF engine rasterizes blurred shadows as solid rectangles — kill them */
+    * { text-shadow: none !important; box-shadow: none !important; }
+    /* …and renders background-clip:text gradients as a filled box — flatten to solid color */
+    .t1-word, .t1-sub,
+    html.signal-cyan .t1-word, html.signal-cyan .t1-sub {
+      background: none !important; -webkit-background-clip: border-box !important;
+      background-clip: border-box !important; -webkit-text-fill-color: #22e0ff !important; color: #22e0ff !important; }
+    html.signal-green .t1-word, html.signal-green .t1-sub {
+      background: none !important; -webkit-background-clip: border-box !important;
+      background-clip: border-box !important; -webkit-text-fill-color: #00ff9c !important; color: #00ff9c !important; }
+    html.signal-amber .t1-word, html.signal-amber .t1-sub {
+      background: none !important; -webkit-background-clip: border-box !important;
+      background-clip: border-box !important; -webkit-text-fill-color: #ffb000 !important; color: #ffb000 !important; }
+  }
+
+  /* ---- shared type ---------------------------------------------------- */
+  .kicker{
+    font-family: var(--font-mono);
+    font-size: var(--type-kicker);
+    font-weight:600;
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    color: var(--ac);
+    display:flex; align-items:center; gap:18px;
+    margin:0;
+  }
+  .kicker::before{
+    content:""; width:42px; height:2px; background:var(--ac);
+    box-shadow: 0 0 12px var(--ac);
+  }
+  h1.title{
+    font-family: var(--font-sans);
+    font-weight:800;
+    font-size: var(--type-title);
+    line-height:1.04;
+    letter-spacing:-0.02em;
+    margin:0;
+    text-wrap:balance;
+  }
+  .lead{
+    font-size: var(--type-lead);
+    line-height:1.5;
+    color: var(--moav-text-2);
+    margin:0;
+    max-width: 22ch;
+  }
+  .body{
+    font-size: var(--type-body);
+    line-height:1.55;
+    color: var(--moav-text-2);
+    margin:0;
+  }
+  .mono{ font-family: var(--font-mono); }
+  .ac{ color: var(--ac); }
+  .white{ color: var(--moav-white); }
+  em.hl{ color: var(--ac); font-style:normal; }
+
+  .slide-num{
+    position:absolute; right: var(--pad-x); bottom: 52px;
+    font-family: var(--font-mono); font-size: 24px; font-weight:500;
+    color: var(--moav-text-3); letter-spacing:0.1em;
+  }
+  /* persistent handle — top-right corner, so any photographed/exported slide carries the link */
+  .deck-foot{
+    position:absolute; top: 44px; right: var(--pad-x);
+    font-family: var(--font-mono); font-size: 18px; font-weight:500;
+    color: var(--moav-text-3); opacity:0.45; letter-spacing:0.12em;
+    z-index:4; pointer-events:none;
+  }
+  .foot{
+    position:absolute; left: var(--pad-x); bottom: 52px;
+    font-family: var(--font-mono); font-size: 24px; font-weight:500;
+    color: var(--moav-text-3); letter-spacing:0.06em;
+  }
+  /* subtle source citations — footnote chrome, deliberately small &amp; dim */
+  .src{
+    position:absolute; left: var(--pad-x); bottom: 50px; right: 168px;
+    font-family: var(--font-mono); font-size: 18px; font-weight:500;
+    color: var(--moav-text-3); opacity:0.62; letter-spacing:0.02em; line-height:1.4;
+    margin:0;
+  }
+  .src b{ color: var(--moav-text-2); font-weight:600; letter-spacing:0.14em; margin-right:10px; }
+  .src a{ color: inherit; text-decoration:none; border-bottom:1px solid rgba(120,140,160,0.3); }
+
+  /* tag / pill */
+  .tag{
+    font-family: var(--font-mono); font-size: 20px; font-weight:500;
+    text-transform:uppercase; letter-spacing:0.08em;
+    padding: 6px 14px; border-radius: var(--radius-xs);
+    border:1px solid var(--ac-line); color: var(--ac); background: var(--ac-dim);
+    display:inline-block; white-space:nowrap;
+  }
+  .tag.warn{ color:var(--moav-yellow); border-color:rgba(255,208,0,0.4); background:var(--moav-yellow-dim, rgba(255,208,0,0.12)); }
+  .tag.ok{ color:var(--moav-green); border-color:rgba(0,255,136,0.4); background:rgba(0,255,136,0.10); }
+  .tag.poc{ color:var(--moav-purple-lift); border-color:var(--moav-purple-line); background:var(--moav-purple-dim); }
+
+  /* card */
+  .card{
+    background: var(--moav-ink-600);
+    border:1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 34px 36px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card-top{ position:relative; }
+  .card-top::before{
+    content:""; position:absolute; top:-34px; left:-36px; right:-36px; height:3px;
+    background: var(--ac);
+    opacity:0.9;
+  }
+
+  /* terminal motif */
+  .term{
+    background:#06060a;
+    border:1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    overflow:hidden;
+    font-family: var(--font-mono);
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 18px; border-bottom:1px solid var(--border-default);
+    background:#0d0d14;
+  }
+  .term-bar i{ width:13px; height:13px; border-radius:50%; display:block; }
+  .term-bar .r{ background:#ff5f57; } .term-bar .y{ background:#febc2e; } .term-bar .g{ background:#28c840; }
+  .term-bar span{ margin-left:10px; color:var(--moav-text-3); font-size:19px; letter-spacing:0.04em; white-space:nowrap; }
+  .term-body{ padding: 26px 30px; font-size: var(--type-small); line-height:1.7; }
+  .term-body .pr{ color: var(--moav-green); }
+  .term-body .cm{ color: var(--moav-white); }
+  .term-body .ok{ color: var(--moav-green); }
+  .term-body .dim{ color: var(--moav-text-3); }
+  .term-body .cy{ color: var(--moav-cyan); }
+
+  /* entrance — transform-only so content is ALWAYS visible (opacity stays 1)
+     even when the animation is paused/throttled (background tab, print, capture). */
+  .anim{ opacity:1; }
+  @media (prefers-reduced-motion: no-preference){
+    [data-deck-active] .anim{ animation: rise .62s var(--ease-out) both; }
+    [data-deck-active] .anim.d1{ animation-delay:.07s; }
+    [data-deck-active] .anim.d2{ animation-delay:.15s; }
+    [data-deck-active] .anim.d3{ animation-delay:.24s; }
+    [data-deck-active] .anim.d4{ animation-delay:.33s; }
+    @keyframes rise{ from{ transform:translateY(26px); } to{ transform:none; } }
+  }
+</style>
+
+<!-- ============================ FEEL TWEAKS ============================ -->
+<style id="feel-controls">
+  /* ---- SIGNAL · recolor the entire cyan accent system ----------------- */
+  html.signal-green{
+    --moav-cyan:#00ff9c;
+    --moav-cyan-dim:rgba(0,255,156,0.12);
+    --moav-cyan-line:rgba(0,255,156,0.42);
+    --moav-glow-cyan:0 0 24px rgba(0,255,156,0.45);
+  }
+  html.signal-amber{
+    --moav-cyan:#ffb000;
+    --moav-cyan-dim:rgba(255,176,0,0.13);
+    --moav-cyan-line:rgba(255,176,0,0.42);
+    --moav-glow-cyan:0 0 24px rgba(255,176,0,0.42);
+  }
+  /* title wordmark gradient */
+  html.signal-green .t1-word{ background:linear-gradient(100deg,#7dffc4,#00ff9c 52%,#00c2a8); -webkit-background-clip:text; background-clip:text; }
+  html.signal-green .t1-sub{ background:linear-gradient(100deg,#7dffc4,#00c2a8); -webkit-background-clip:text; background-clip:text; }
+  html.signal-amber .t1-word{ background:linear-gradient(100deg,#ffd98a,#ffb000 52%,#ff7a3d); -webkit-background-clip:text; background-clip:text; }
+  html.signal-amber .t1-sub{ background:linear-gradient(100deg,#ffd98a,#ff7a3d); -webkit-background-clip:text; background-clip:text; }
+  /* constellation network */
+  html.signal-green .constellation g[stroke]{ stroke:#1f8f6b; }
+  html.signal-green .constellation g[fill]{ fill:#2fd49b; }
+  html.signal-amber .constellation g[stroke]{ stroke:#9e6a1e; }
+  html.signal-amber .constellation g[fill]{ fill:#e0a23a; }
+  /* hardcoded cyan in SVG charts (morale curve + endpoints, nedagram tones) */
+  html.signal-green [stroke="#00d4ff"]{ stroke:#00ff9c; }
+  html.signal-green [fill="#00d4ff"]{ fill:#00ff9c; }
+  html.signal-green [fill="#22e0ff"]{ fill:#00ff9c; }
+  html.signal-amber [stroke="#00d4ff"]{ stroke:#ffb000; }
+  html.signal-amber [fill="#00d4ff"]{ fill:#ffb000; }
+  html.signal-amber [fill="#22e0ff"]{ fill:#ffb000; }
+  html.signal-green .spectro stop:first-child{ stop-color:#7dffc4; }
+  html.signal-green .spectro stop:last-child{ stop-color:#00c2a8; }
+  html.signal-amber .spectro stop:first-child{ stop-color:#ffd98a; }
+  html.signal-amber .spectro stop:last-child{ stop-color:#ff7a3d; }
+
+  /* ---- ATMOSPHERE · backdrop texture --------------------------------- */
+  /* Void — strip the circuit grid, calm the hero glow */
+  html.atmo-void .slide::before{ display:none; }
+  html.atmo-void .slide.glow{ background:radial-gradient(ellipse 120% 80% at 50% -10%, #0d1526 0%, var(--moav-ink-900) 62%); }
+  html.atmo-void .constellation{ opacity:0.38; }
+  /* Scanlines — CRT phosphor overlay + vignette */
+  html.atmo-scanlines .slide::after{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+    background:
+      repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.17) 2px 3px),
+      radial-gradient(ellipse 80% 75% at 50% 48%, transparent 58%, rgba(0,0,0,0.34) 100%);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    html.atmo-scanlines [data-deck-active].slide::after,
+    html.atmo-scanlines [data-deck-active] .slide::after{ animation:crtflick 5.5s steps(60) infinite; }
+    @keyframes crtflick{ 0%,97%,100%{ opacity:1; } 98%{ opacity:0.82; } 99%{ opacity:0.93; } }
+  }
+
+  /* ---- VOICE · headline treatment ------------------------------------ */
+  html.voice-terminal .slide h1:not([data-noterminal]),
+  html.voice-terminal .title{
+    font-family:var(--font-mono) !important;
+    text-transform:uppercase;
+    font-weight:600 !important;
+    letter-spacing:-0.02em;
+    line-height:0.98;
+  }
+</style>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+
+  <!-- ============================== SLIDE 1 — TITLE ============================== -->
+  <section class="slide" data-screen-label="01 Title" style="justify-content:center; overflow:hidden; background:radial-gradient(ellipse 130% 100% at 50% -10%, #16264a 0%, #0c1426 38%, #070a12 100%);">
+    <!-- constellation network, og-image theme -->
+    <svg class="constellation" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g stroke="#2f6fb0" stroke-width="1.1" opacity="0.5">
+        <line x1="150" y1="200" x2="360" y2="120"/><line x1="360" y1="120" x2="540" y2="260"/>
+        <line x1="150" y1="200" x2="240" y2="430"/><line x1="240" y1="430" x2="120" y2="660"/>
+        <line x1="240" y1="430" x2="470" y2="540"/><line x1="540" y1="260" x2="760" y2="180"/>
+        <line x1="760" y1="180" x2="940" y2="330"/><line x1="940" y1="330" x2="840" y2="560"/>
+        <line x1="1140" y1="150" x2="1320" y2="300"/><line x1="1320" y1="300" x2="1520" y2="200"/>
+        <line x1="1520" y1="200" x2="1700" y2="320"/><line x1="1700" y1="320" x2="1640" y2="560"/>
+        <line x1="1320" y1="300" x2="1280" y2="560"/><line x1="1280" y1="560" x2="1480" y2="640"/>
+        <line x1="470" y1="540" x2="620" y2="760"/><line x1="620" y1="760" x2="430" y2="900"/>
+        <line x1="840" y1="560" x2="1020" y2="720"/><line x1="1020" y1="720" x2="1180" y2="900"/>
+        <line x1="1480" y1="640" x2="1640" y2="560"/><line x1="1640" y1="560" x2="1760" y2="760"/>
+      </g>
+      <g fill="#3f8fd6">
+        <circle cx="150" cy="200" r="4"/><circle cx="360" cy="120" r="3"/><circle cx="540" cy="260" r="4"/>
+        <circle cx="240" cy="430" r="3"/><circle cx="120" cy="660" r="4"/><circle cx="470" cy="540" r="3"/>
+        <circle cx="760" cy="180" r="4"/><circle cx="940" cy="330" r="3"/><circle cx="840" cy="560" r="4"/>
+        <circle cx="1140" cy="150" r="3"/><circle cx="1320" cy="300" r="4"/><circle cx="1520" cy="200" r="3"/>
+        <circle cx="1700" cy="320" r="4"/><circle cx="1640" cy="560" r="3"/><circle cx="1280" cy="560" r="4"/>
+        <circle cx="1480" cy="640" r="3"/><circle cx="620" cy="760" r="4"/><circle cx="430" cy="900" r="3"/>
+        <circle cx="1020" cy="720" r="4"/><circle cx="1180" cy="900" r="3"/><circle cx="1760" cy="760" r="4"/>
+      </g>
+    </svg>
+
+    <div class="t1-wrap" style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center;">
+      <img class="anim" src="assets/logo.png" alt="MoaV" style="width:320px; height:320px; filter: drop-shadow(0 0 60px rgba(34,224,255,0.6));">
+      <div class="anim" style="display:flex; align-items:baseline; justify-content:center; gap:18px; margin-top:30px;">
+        <span class="t1-word">MoaV</span>
+        <span class="t1-sub">Mother of all VPNs</span>
+      </div>
+
+      <h1 class="anim d1" data-noterminal style="font-family:var(--font-sans); font-weight:800; font-size:96px; line-height:0.98; letter-spacing:-0.03em; margin:28px 0 0; max-width:22ch;">
+        <span style="display:block;" data-comment-anchor="a37095b41e-span">Rage-coding the</span>
+        <span style="display:block;" data-comment-anchor="61666f8b94-span">Mother of all VPNs</span>
+      </h1>
+
+      <p class="anim d2 mono" style="font-size:34px; font-weight:500; color:var(--moav-cyan); margin:26px 0 0; text-shadow:0 0 24px rgba(0,212,255,0.4);">(the mad scientist shit that matters)</p>
+
+      <div class="anim d3" style="margin-top:52px; display:flex; align-items:baseline; justify-content:center; gap:24px; font-family:var(--font-mono); font-size:25px; white-space:nowrap;">
+        <span style="color:var(--moav-white); font-weight:600;">Shayan Eskandari</span>
+        <span style="color:var(--moav-text-3);">·</span>
+        <span style="color:var(--moav-text-2);">Neocypherpunk Summit · Berlin 2026</span>
+      </div>
+    </div>
+  </section>
+  <style>
+    .constellation{ position:absolute; inset:0; width:100%; height:100%; z-index:0;
+      mask-image: radial-gradient(ellipse 95% 90% at 50% 45%, #000 35%, transparent 88%); }
+    .t1-word{ font-family:var(--font-mono); font-weight:700; font-size:64px; line-height:1; letter-spacing:0.14em;
+      background:linear-gradient(100deg,#22e0ff 0%, #3aa0ff 50%, #7b5cff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .t1-sub{ font-family:var(--font-sans); font-weight:700; font-size:30px; letter-spacing:0.01em;
+      background:linear-gradient(100deg,#22e0ff, #7b5cff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  </style>
+
+  <!-- ============================== SLIDE 2 — SPEAKER BIO ============================== -->
+  <section class="slide grid-tex" data-screen-label="02 Speaker">
+    <div class="anim d1" style="position:relative; z-index:8; flex:1; display:grid; grid-template-columns: 0.8fr 1.2fr; gap:60px; align-items:stretch; min-height:0;">
+      <div class="bio-photo-wrap">
+        <img class="bio-photo" src="assets/shayan.jpg" alt="Shayan Eskandari, double exposure on a Yashica 635, Lisbon 2025">
+      </div>
+      <div style="display:flex; flex-direction:column; justify-content:center;">
+        <p class="kicker">who's talking</p>
+        <div style="display:flex; align-items:baseline; gap:22px; flex-wrap:wrap; margin-top:14px;">
+          <h1 class="title" style="margin:0;">Shayan Eskandari</h1>
+          <a href="https://shayan.es" class="bio-link" style="font-family:var(--font-mono); font-size:26px;">shayan.es</a>
+        </div>
+        <p class="bio-role mono">security researcher · hacker · educator · human-centered technologist</p>
+        <div class="bio-lines">
+          <p><span class="bx">⌁</span> PhD on blockchain's <em class="hl">unforeseen consequences</em>: front-running, oracle failures, the dark sides of permissionlessness.</p>
+          <p><span class="bx">⌁</span>Blockchain Engineer building Bitaccess (BTM), Smart contract Security at <span class="white">ConsenSys Diligence</span>, CTO at <span class="white">Ether Capital</span>, one of the first publicly-traded ETH staking operations (36k ETH) and more... </p>
+          <p><span class="bx">⌁</span> Teaching Farsi speakers crypto since 2015 through <span class="white">CoinIran Academy</span> and <span class="white">Shir Ya Khat</span> podcast. Co-founded <span class="white">IranUnchained</span> (Moloch-v3 NGO).</p>
+          <p><span class="bx">⌁</span> Current obsession: Internet Freedom &nbsp;&nbsp;·&nbsp;&nbsp;<span class="ac">moav.sh</span></p>
+        </div>
+        <p class="bio-foot mono">off the terminal: analogue photography and a camera collection that's gotten out of hand.</p>
+      </div>
+    </div>
+    <div class="slide-num mono">02</div>
+  </section>
+  <style>
+    .bio-photo-wrap{ height:100%; min-height:0; display:flex; align-items:center; justify-content:center; }
+    .bio-photo{ position:relative; z-index:7; width:100%; height:100%; max-height:660px; object-fit:cover; border-radius:var(--radius-lg); border:1px solid var(--moav-cyan-line); box-shadow:var(--moav-glow-cyan); }
+    .bio-role{ font-size:20px; color:var(--moav-cyan); margin:14px 0 0; letter-spacing:0.01em; white-space:nowrap; }
+    .bio-lines{ display:flex; flex-direction:column; gap:15px; margin-top:28px; }
+    .bio-lines p{ font-size:24px; line-height:1.45; color:var(--moav-text-2); margin:0; padding-left:30px; position:relative; }
+    .bio-lines .bx{ position:absolute; left:0; top:0; color:var(--moav-cyan); }
+    .bio-lines .white{ color:var(--moav-white); font-weight:600; }
+    .bio-foot{ font-size:21px; color:var(--moav-text-3); margin-top:28px; }
+    .bio-link{ color:var(--moav-cyan); text-decoration:none; border-bottom:1px solid var(--moav-cyan-line); }
+  </style>
+
+  <!-- ============================== SLIDE 3 — THE PATTERN ============================== -->
+  <section class="slide danger grid-tex" data-screen-label="03 The Pattern">
+    <p class="kicker anim">The pattern</p>
+    <h1 class="title anim d1" style="margin-top:24px; max-width:24ch;">Iran has been going dark for <span class="ac">over two decades</span></h1>
+
+    <div class="anim d2" style="margin-top:54px; flex:1; display:flex; flex-direction:column; justify-content:center; gap:0;">
+      <div class="esc-row">
+        <div class="esc-year mono">2009</div>
+        <div class="esc-name">Green Movement</div>
+        <div class="esc-method mono">SMS cut · sites blocked · proxies hunted</div>
+        <div class="esc-scale mono">throttled · partial</div>
+        <div class="esc-arrests mono">~4,000 arrested</div>
+        <div class="esc-deaths mono">100s killed</div>
+      </div>
+      <div class="esc-row">
+        <div class="esc-year mono">2019</div>
+        <div class="esc-name">"Bloody Aban"</div>
+        <div class="esc-method mono" data-comment-anchor="7d13110dc0-i">BGP routes withdrawn</div>
+        <div class="esc-scale mono">~95% off · ~6 days</div>
+        <div class="esc-arrests mono">~7,000 arrested</div>
+        <div class="esc-deaths mono">~1,500 killed</div>
+      </div>
+      <div class="esc-row">
+        <div class="esc-year mono">2022</div>
+        <div class="esc-name">Woman, Life, Freedom</div>
+        <div class="esc-method mono">all data cut</div>
+        <div class="esc-scale mono">rolling · 80+ cities</div>
+        <div class="esc-arrests mono">~19,000 arrested</div>
+        <div class="esc-deaths mono">550+ killed</div>
+      </div>
+      <div class="esc-row">
+        <div class="esc-year mono">2025</div>
+        <div class="esc-name">The 12-Day War</div>
+        <div class="esc-method mono">near-total cut (cyberwar)</div>
+        <div class="esc-scale mono">−97% · ~6 days</div>
+        <div class="esc-arrests">~21,000 arrested</div>
+        <div class="esc-deaths"></div>
+      </div>
+      <div class="esc-row">
+        <div class="esc-year mono">2026</div>
+        <div class="esc-name">7 + 88 days dark</div>
+        <div class="esc-method mono">phones, SMS &amp; internet, all off. then just dark</div>
+        <div class="esc-scale mono">~88 days</div>
+        <div class="esc-arrests mono">~6,000 arrested</div>
+        <div class="esc-deaths mono" data-comment-anchor="0d4d331e4b-div">30k–70k killed</div>
+      </div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:36px; color:var(--moav-text-2);">Each time: harder. Each time: <em class="hl">they learn</em>.</p>
+    <p class="src"><b>SOURCES</b>NetBlocks · Amnesty · Article 19 · Reuters · Iran Human Rights · HRANA · Wikipedia:“Internet censorship in Iran”</p>
+    <div class="slide-num mono">03</div>
+  </section>
+
+  <style>
+    .esc-row{
+      display:grid;
+      grid-template-columns: 96px 258px 1fr 196px 186px 178px;
+      align-items:center;
+      gap:22px;
+      padding:18px 0;
+      border-top:1px solid var(--border-default);
+    }
+    .esc-row:last-child{ border-bottom:1px solid var(--border-default); }
+    .esc-year{ font-size:34px; font-weight:600; color:var(--moav-white); }
+    .esc-name{ font-size:25px; font-weight:600; color:var(--moav-white); }
+    .esc-method{ font-size:22px; color:var(--moav-text-2); }
+    .esc-scale{ font-size:22px; color:var(--moav-text-3); }
+    .esc-arrests{ font-size:23px; font-weight:600; color:#f0a23c; text-align:right; letter-spacing:0.02em; }
+    .esc-deaths{ font-size:23px; font-weight:600; color:var(--moav-red); text-align:right; letter-spacing:0.02em; }
+  </style>
+
+  <!-- ============================== SLIDE 4 — THIS YEAR ============================== -->
+  <section class="slide danger" data-screen-label="04 This Year">
+    <div class="anim" style="display:flex; align-items:flex-end; justify-content:space-between; gap:40px;">
+      <div>
+        <p class="kicker">2026</p>
+        <h1 class="title" style="margin-top:22px; max-width:20ch;">This year, the worst on record</h1>
+      </div>
+      <p class="mono" style="font-size:24px; color:var(--moav-text-3); text-align:right; line-height:1.5; margin:0; flex-shrink:0;">Iran international connectivity<br>Dec 2025 – June 2026</p>
+    </div>
+
+    <div class="anim d1" style="margin-top:40px; flex:1; display:grid; grid-template-columns: 1fr 430px; gap:44px; align-items:center; min-height:0;">
+      <div style="height:100%; min-height:0; display:flex; align-items:center;">
+        <img src="assets/iran-traffic.jpg" alt="Iran internet traffic, two collapses to near-zero" style="width:100%; height:100%; object-fit:contain; border-radius:var(--radius-md); border:1px solid var(--border-strong);">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="yr-stat hot">
+          <div class="yr-when mono" style="color:var(--moav-red);">JAN 8–9</div>
+          <div class="yr-head" style="color:var(--moav-red);">Everything off, and the killing</div>
+          <div class="yr-sub" data-comment-anchor="571a5336e0-div">SMS, phones, internet, all cut. 30,000–70,000 killed in the streets.</div>
+        </div>
+        <div class="yr-stat">
+          <div class="yr-when mono">88 DAYS</div>
+          <div class="yr-head">Internet blackout</div>
+          <div class="yr-sub">Phones returned; the internet didn't. Almost back ~60% in late May.</div>
+        </div>
+        <div class="yr-stat hot">
+          <div class="yr-when mono" style="color:var(--moav-red);">THE RETURN</div>
+          <div class="yr-head" style="color:var(--moav-red); font-size:28px;">Azerbaijan hit #3 for ChatGPT, per capita</div>
+          <div class="yr-sub">Iran's traffic is laundered through Azerbaijan's network, so Iranians showed up as Azerbaijani.</div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <p class="body anim d3" style="margin-top:18px;">Cut the internet and the need doesn't vanish. <em class="hl">It leaks out the nearest crack.</em></p>
+    <p class="src"><b>SOURCES</b>Traffic: Kentik / Doug Madory · blackout: NetBlocks · Azerbaijan routing: digimpactlab.substack · Kolbars: Qalandar et al., CHI '26</p>
+    <div class="slide-num mono">04</div>
+  </section>
+  <style>
+    .yr-stat{ border-left:3px solid var(--border-active); padding:4px 0 4px 24px; }
+    .yr-stat.hot{ border-left-color:var(--moav-red); }
+    .yr-when{ font-size:22px; font-weight:600; letter-spacing:0.12em; color:var(--moav-text-3); }
+    .yr-head{ font-size:30px; font-weight:700; color:var(--moav-white); margin-top:5px; line-height:1.12; }
+    .yr-sub{ font-size:22px; line-height:1.4; color:var(--moav-text-2); margin-top:6px; }
+    .kolbar{ display:flex; align-items:center; gap:18px; margin-top:14px; border-left:3px solid var(--moav-red); padding:7px 0 7px 22px; }
+    .kolbar-ic{ width:54px; height:auto; flex-shrink:0; }
+    .kolbar p{ font-size:23px; line-height:1.4; color:var(--moav-text-2); margin:0; }
+    .kolbar .white{ color:var(--moav-white); font-weight:600; }
+  </style>
+
+  <!-- ============================== SLIDE 5 — GLOBAL TREND ============================== -->
+  <section class="slide grid-tex" data-screen-label="05 Global Trend">
+    <div class="anim" style="display:flex; align-items:flex-end; justify-content:space-between; gap:40px;">
+      <div>
+        <p class="kicker">Not just Iran</p>
+        <h1 class="title" style="margin-top:22px; max-width:24ch;">Internet censorship is becoming the global default</h1>
+      </div>
+    </div>
+
+    <p class="mono anim d1" style="font-size:24px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-text-3); margin:46px 0 22px;">Every spike is a population fleeing to a free internet</p>
+    <div class="anim d1" style="display:grid; grid-template-columns:repeat(4,1fr); gap:22px;">
+      <div class="spike">
+        <div class="spike-pct mono">+2,892%</div>
+        <div class="spike-unit mono">↑ VPN demand</div>
+        <div class="spike-where">Nepal</div>
+        <div class="spike-why">Sep 2025 · social-media ban</div>
+      </div>
+      <div class="spike">
+        <div class="spike-pct mono">+2,557%</div>
+        <div class="spike-unit mono">↑ VPN demand</div>
+        <div class="spike-where">Uganda</div>
+        <div class="spike-why">Jan 2026 · election blackout</div>
+      </div>
+      <div class="spike">
+        <div class="spike-pct mono" data-comment-anchor="405e65cff6-div">+1,987%</div>
+        <div class="spike-unit mono">↑ VPN demand</div>
+        <div class="spike-where">United Kingdom</div>
+        <div class="spike-why">Jul 2025 · age-verification law</div>
+      </div>
+      <div class="spike hot">
+        <div class="spike-pct mono">+934%</div>
+        <div class="spike-unit mono">↑ VPN demand</div>
+        <div class="spike-where">Iran</div>
+        <div class="spike-why">May 2026 · restoration day</div>
+      </div>
+    </div>
+
+    <div class="anim d2" style="margin-top:42px; display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+      <div class="demo-note">
+        <span class="demo-flag mono">Russia · 2026</span>
+        <span class="demo-txt">The regulator now <span class="white">DDoS-es VPNs</span>, not just blocks them.</span>
+      </div>
+      <div class="demo-note">
+        <span class="demo-flag mono">US · Utah / UK</span>
+        <span class="demo-txt">Age-verification laws that <span class="white">target VPNs directly</span>.</span>
+      </div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:36px;" data-comment-anchor="1f44a9263e-p">Different flags, same playbook. <em class="hl" style="color:var(--moav-red);">Control the network, Control the people.</em> </p>
+    <p class="src"><b>SOURCES</b>VPN-demand surges: Top10VPN · shutdown context: NetBlocks · Wikipedia: “Internet shutdowns”</p>
+    <div class="slide-num mono">05</div>
+  </section>
+  <style>
+    .spike{ background:var(--moav-ink-600); border:1px solid var(--border-strong); border-radius:var(--radius-lg); padding:26px 28px; display:flex; flex-direction:column; gap:8px; }
+    .spike-pct{ font-size:54px; font-weight:700; color:var(--moav-cyan); line-height:1; letter-spacing:-0.01em; text-shadow:0 0 22px rgba(0,212,255,0.35); }
+    .spike.hot{ border-color:rgba(255,71,87,0.45); background:rgba(255,71,87,0.07); }
+    .spike-unit{ font-size:20px; font-weight:600; letter-spacing:0.06em; color:var(--moav-cyan); margin-top:2px; }
+    .spike-where{ font-size:28px; font-weight:700; color:var(--moav-white); margin-top:10px; }
+    .spike-why{ font-size:24px; color:var(--moav-text-2); line-height:1.35; }
+    .demo-note{ display:flex; flex-direction:column; gap:10px; border-left:3px solid var(--moav-yellow); padding:6px 0 6px 22px; }
+    .demo-flag{ font-size:24px; font-weight:600; letter-spacing:0.08em; color:var(--moav-yellow); }
+    .demo-txt{ font-size:26px; line-height:1.4; color:var(--moav-text-2); }
+    .demo-txt .white{ color:var(--moav-white); }
+  </style>
+
+  <!-- ============================== SLIDE 6 — ENSHITTIFICATION 1 ============================== -->
+  <section class="slide grid-tex" data-screen-label="06 Enshittification — Internet">
+    <p class="kicker anim">Enshittification · part 1</p>
+    <h1 class="title anim d1" style="margin-top:24px; max-width:26ch;">The internet infrastructure is rotting</h1>
+
+    <div class="anim d2" style="margin-top:56px; flex:1; display:grid; grid-template-columns: 1.05fr 0.95fr; gap:96px; align-items:center;">
+      <div>
+        <p class="mono" style="font-size:22px; letter-spacing:0.12em; color:var(--moav-text-3); text-transform:uppercase; margin:0 0 28px;">The platform lifecycle</p>
+        <ol class="ens-list">
+          <li><span class="ens-n mono">1</span><span class="ens-t">Be good to users.</span></li>
+          <li><span class="ens-n mono">2</span><span class="ens-t">Capture users.</span></li>
+          <li><span class="ens-n mono">3</span><span class="ens-t">Abuse users to serve business customers.</span></li>
+          <li><span class="ens-n mono">4</span><span class="ens-t">Abuse business customers to extract value.</span></li>
+          <li><span class="ens-n mono">5</span><span class="ens-t">The platform rots. --Giant pile of Shit--</span></li>
+        </ol>
+      </div>
+      <div>
+        <p class="body" style="font-size:30px; color:var(--moav-text-2); margin:0 0 22px;">The same arc is the whole history of the internet:</p>
+        <div class="flow-chain mono">
+          <span class="fc">Open protocols</span>
+          <span class="fa">↓</span>
+          <span class="fc fc-warn" data-comment-anchor="05c5886dfd-span">ISP capture</span>
+          <span class="fa">↓</span>
+          <span class="fc danger-chip">State chokepoints</span>
+        </div>
+        <p class="mono" style="font-size:24px; color:var(--moav-text-3); margin-top:36px;">— Cory Doctorow, <span style="color:var(--moav-text-2);">enshittification</span></p>
+      </div>
+    </div>
+        <p class="src"><b>SOURCE</b>Term: Cory Doctorow — “Enshittification” (2022)</p>
+
+    <div class="slide-num mono">06</div>
+  </section>
+  <style>
+    .ens-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:18px; }
+    .ens-list li{ display:flex; align-items:center; gap:24px; }
+    .ens-n{ width:48px; height:48px; flex-shrink:0; border:1px solid var(--ac-line); color:var(--ac); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600; }
+    .ens-list li:last-child .ens-n{ border-color:var(--moav-red); color:var(--moav-red); }
+    .ens-t{ font-size:30px; color:var(--moav-white); }
+    .ens-list li:last-child .ens-t{ color:var(--moav-text-2); }
+    .flow-chain{ display:flex; flex-direction:column; gap:8px; align-items:stretch; width:min(100%,380px); }
+    .fc{ font-size:27px; font-weight:600; padding:16px 24px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:var(--moav-ink-600); color:var(--moav-white); text-align:center; white-space:nowrap; }
+    .fc.danger-chip{ border-color:rgba(255,71,87,0.4); color:var(--moav-red); background:rgba(255,71,87,0.08); }
+    .fc.fc-warn{ border-color:rgba(255,208,0,0.4); color:var(--moav-yellow); background:rgba(255,208,0,0.07); }
+    .fa{ color:var(--ac); font-size:24px; text-align:center; line-height:1; }
+  </style>
+
+  <!-- ============================== SLIDE 7 — ENSHITTIFICATION 2 ============================== -->
+  <section class="slide" data-screen-label="07 Web3 Forgot the Promise">
+    <p class="kicker anim">Enshittification · part 2</p>
+    <h1 class="title anim d1" style="margin-top:24px; max-width:24ch;">Web3 forgot the promise</h1>
+
+    <div class="anim d2" style="margin-top:48px; flex:1; display:grid; grid-template-columns: 1fr 1fr; gap:48px; align-items:stretch; min-height:0;">
+      <!-- 1993 terminal -->
+      <div style="display:flex; flex-direction:column;">
+        <p class="split-cap mono">1993 · cypherpunks writing code</p>
+        <div class="term" style="flex:1; display:flex; flex-direction:column;">
+          <div class="term-bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>manifesto.txt</span></div>
+          <div class="term-body" style="display:flex; flex-direction:column; justify-content:center; flex:1;">
+            <p style="color:var(--moav-green); font-size:32px; line-height:1.5; margin:0;">"We are defending our privacy with cryptography."</p>
+            <p style="color:var(--moav-text-3); font-size:24px; margin:26px 0 0;">→ remailers · signatures · electronic money · <span style="color:var(--moav-green);">communications privacy across borders</span></p>
+          </div>
+        </div>
+      </div>
+      <!-- 2026 VC deck -->
+      <div style="display:flex; flex-direction:column;">
+        <p class="split-cap mono" style="color:var(--moav-purple-lift);">2026 · the deck</p>
+        <div class="vc-card" style="flex:1;">
+          <p class="vc-eyebrow mono">INSTITUTIONAL PRIVACY SOLUTIONS™</p>
+          <div class="vc-row">
+            <span class="vc-chip">Yield</span>
+            <span class="vc-chip">KYC</span>
+            <span class="vc-chip">Token launches</span>
+            <span class="vc-chip">Enterprise privacy</span>
+          </div>
+          <svg viewBox="0 0 380 232" class="vc-curve" preserveAspectRatio="xMidYMid meet">
+            <defs><linearGradient id="vcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58a6ff" stop-opacity="0.55"/><stop offset="1" stop-color="#58a6ff" stop-opacity="0"/></linearGradient></defs>
+            <!-- y-axis label + axes -->
+            <text x="14" y="20" fill="#9ecbff" font-family="'JetBrains Mono',monospace" font-size="16" font-weight="700">valuation ↑</text>
+            <path d="M42,18 V190 H374" fill="none" stroke="rgba(158,203,255,0.3)" stroke-width="1.5"/>
+            <g stroke="rgba(158,203,255,0.10)" stroke-width="1"><path d="M42,62 H374"/><path d="M42,106 H374"/><path d="M42,150 H374"/></g>
+            <!-- hockey stick: area + line -->
+            <path d="M46,178 C156,172 236,150 322,30 L370,24 L370,190 L46,190 Z" fill="url(#vcg)"/>
+            <path d="M46,178 C156,172 236,150 322,30 L370,24" fill="none" stroke="#58a6ff" stroke-width="3.5"/>
+            <circle cx="370" cy="24" r="5" fill="#58a6ff"/>
+            <text x="364" y="50" text-anchor="end" fill="#9ecbff" font-family="'JetBrains Mono',monospace" font-size="18" font-weight="700">ARR · TAM · exit ↑</text>
+            <!-- flat red line: real users -->
+            <path d="M46,184 H370" fill="none" stroke="#ff4757" stroke-width="2.5" stroke-dasharray="4 5"/>
+            <text x="50" y="176" fill="#ff6b78" font-family="'JetBrains Mono',monospace" font-size="16" font-weight="600">people who actually need it: 0</text>
+            <!-- x-axis stops -->
+            <g fill="rgba(158,203,255,0.6)" font-family="'JetBrains Mono',monospace" font-size="15">
+              <text x="46" y="212">seed</text><text x="208" y="212" text-anchor="middle">Series A</text><text x="370" y="212" text-anchor="end">exit →</text>
+            </g>
+          </svg>
+          <p class="vc-foot" data-comment-anchor="0bd5b4bc4b-p">“Privacy-as-a-Service.” SOC 2-ready confidential compute, sold to <span style="color:#9ecbff; font-weight:600;">BlackRock</span>, <span style="color:var(--moav-white); font-weight:600;">never to a person who needs it.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:34px; text-align:center; font-size:34px; color:var(--moav-white);">Same movement, 30 years apart. <em class="hl" style="color:var(--moav-red);" data-comment-anchor="320ad8938d-em">This isn't cypherpunk anymore, right?</em></p>
+    <div class="slide-num mono">07</div>
+  </section>
+  <style>
+    .split-cap{ font-size:21px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-green); margin:0 0 18px; }
+    .vc-card{ background:linear-gradient(150deg, #0e1830, #0a0e1a); border:1px solid rgba(88,166,255,0.28); border-radius:var(--radius-lg); padding:38px 40px; display:flex; flex-direction:column; }
+    .vc-eyebrow{ font-size:22px; letter-spacing:0.14em; color:#58a6ff; margin:0 0 26px; }
+    .vc-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:auto; }
+    .vc-chip{ font-family:var(--font-sans); font-size:26px; font-weight:600; padding:12px 22px; border-radius:var(--radius-md); background:rgba(88,166,255,0.12); color:#9ecbff; border:1px solid rgba(88,166,255,0.25); }
+    .vc-curve{ width:100%; height:auto; max-height:250px; margin:26px 0 16px; }
+    .vc-foot{ font-size:23px; color:var(--moav-text-2); margin:0; }
+  </style>
+
+  <!-- ============================== SLIDE 8 — THE GAP ============================== -->
+  <section class="slide grid-tex" data-screen-label="08 The Gap">
+    <p class="kicker anim">The gap</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:32ch;">We "built" the top of the stack and forgot the rest</h1>
+
+    <div class="anim d2" style="margin-top:34px; flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0;">
+      <div class="gap-diagram">
+        <p class="gap-head built">Where we've been building — 15 years</p>
+        <div class="glayer half"><span class="gl-name mono">App layer</span><span class="gl-body">Wallets · dApps · social · DeFi front-ends</span><span class="gl-tag mono">shipped centralized easier monetization</span></div>
+        <div class="glayer half"><span class="gl-name mono">Protocol layer</span><span class="gl-body">L2s · IPFS · RPC · bridges · ZK</span><span class="gl-tag mono">shipped centralized easier monetization</span></div>
+        <div class="glayer contested"><span class="gl-name mono" data-comment-anchor="51149e35c1-span">Transport</span><span class="gl-body">TLS · DNS · CDN — <span class="warn">still centralized; ENS isn't there yet</span></span></div>
+
+        <div class="gap-connector mono">↓&nbsp;&nbsp;all of it rests on a layer we don't control&nbsp;&nbsp;↓</div>
+
+        <p class="gap-head lost">Where we forgot — the adversary owns this</p>
+        <div class="glayer captured"><span class="gl-name mono">Access</span><span class="gl-body">ISPs · IXPs — consolidated &amp; licensed</span></div>
+        <div class="glayer fiber"><span class="gl-name mono">Physical</span><span class="gl-body">The last mile — fiber, <span class="white">state-controlled</span></span><span class="gl-cut mono">✂ severed</span></div>
+      </div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:26px;">Cut the bottom and everything above it vanishes. <em class="hl" style="color:var(--moav-red);">a failure of imagination about who the adversary could be.</em></p>
+    <div class="slide-num mono">08</div>
+  </section>
+  <style>
+    .gap-diagram{ width:min(100%,1500px); display:flex; flex-direction:column; gap:12px; }
+    .gap-head{ font-family:var(--font-mono); font-size:22px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; margin:0; }
+    .gap-head.built{ color:var(--moav-cyan); }
+    .gap-head.lost{ color:var(--moav-red); margin-top:8px; }
+    .glayer{ display:flex; align-items:center; gap:28px; padding:18px 30px; border-radius:var(--radius-sm); border:1px solid; }
+    .glayer .gl-name{ width:230px; flex-shrink:0; font-size:25px; font-weight:600; letter-spacing:0.04em; }
+    .glayer .gl-body{ flex:1; font-size:26px; color:var(--moav-text-2); }
+    .glayer .gl-body .white{ color:var(--moav-white); font-weight:600; }
+    .glayer.built{ border-color:var(--moav-cyan-line); background:var(--moav-cyan-dim); }
+    .glayer.built .gl-name{ color:var(--moav-cyan); }
+    .glayer.half{ border-color:var(--moav-cyan-line); background:linear-gradient(90deg, var(--moav-cyan-dim) 0 50%, rgba(255,208,0,0.13) 50% 100%); }
+    .glayer.half .gl-name{ color:var(--moav-cyan); }
+    .gl-tag{ margin-left:auto; flex-shrink:0; max-width:240px; white-space:normal; text-align:center; line-height:1.2; font-size:17px; font-weight:600; letter-spacing:0.02em; color:var(--moav-yellow); border:1px solid rgba(255,208,0,0.45); border-radius:var(--radius-md); padding:7px 14px; }
+    .gap-note{ font-size:20px; color:var(--moav-text-3); text-align:center; margin:4px 0 0; letter-spacing:0.01em; }
+    .gap-note .b{ color:var(--moav-cyan); font-weight:600; } .gap-note .y{ color:var(--moav-yellow); font-weight:600; }
+    .glayer.captured{ border-color:rgba(255,208,0,0.4); background:rgba(255,208,0,0.07); }
+    .glayer.captured .gl-name{ color:var(--moav-yellow); }
+    .glayer.contested{ border-color:rgba(255,208,0,0.32); background:rgba(255,208,0,0.045); border-style:dashed; }
+    .glayer.contested .gl-name{ color:var(--moav-yellow); }
+    .glayer.contested .gl-body .warn{ color:var(--moav-yellow); }
+    .glayer.fiber{ border-color:rgba(255,71,87,0.5); background:rgba(255,71,87,0.10); padding-top:24px; padding-bottom:24px; }
+    .glayer.fiber .gl-name{ color:var(--moav-red); font-size:27px; }
+    .gl-cut{ margin-left:auto; font-size:23px; font-weight:600; color:var(--moav-red); letter-spacing:0.06em; }
+    .gap-connector{ font-size:23px; color:var(--moav-text-3); text-align:center; padding:8px 0; letter-spacing:0.04em; }
+  </style>
+
+  <!-- ============================== SLIDE 9 — RAGE CODING: THE STORY (warm) ============================== -->
+  <section class="slide warm grid-tex" data-screen-label="09 Rage Coding">
+    <p class="kicker anim">Rage coding · why</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:24ch;" data-comment-anchor="fc9e8e2375-h1">I felt hopeless. So I rage coded.</h1>
+
+    <div class="anim d2" style="margin-top:28px; flex:1; display:grid; grid-template-columns: 1fr 1fr; gap:54px; align-items:center; min-height:0;">
+      <div style="display:flex; flex-direction:column; gap:30px;">
+        <p class="body" style="font-size:28px;">I'm Iranian diaspora, for more than a decade, I've been teaching Farsi speakers the whole Web3 tech stack.</p>
+        <p class="body" style="font-size:28px;">When the blackout came, it was all worthless. I couldn't reach my own family. My messages weren't blocked, they just <em class="hl">weren't delivered</em>.</p>
+        <p class="body" style="font-size:28px;">So I rage-coded. Not for a financial future, for a better <em class="hl">now</em>, and my own sanity.</p>
+      </div>
+
+      <div class="arc-card">
+        <p class="arc-eyebrow mono">the shutdown, and what I did</p>
+        <div class="arc-step"><span class="arc-dot ok"></span><div><span class="arc-when mono">JAN–FEB</span><span class="arc-net">First blackout, partial return</span><span class="arc-txt">I shipped MoaV; people got through.</span></div></div>
+        <div class="arc-step"><span class="arc-dot bad"></span><div><span class="arc-when mono">FEB 28</span><span class="arc-net">Full shutdown · 88 days dark</span><span class="arc-txt">Everything went silent. I broke, walked away for days.</span></div></div>
+        <div class="arc-step"><span class="arc-dot ok"></span><div><span class="arc-when mono">LATE MAY</span><span class="arc-net">Back at ~60%, unstable</span><span class="arc-txt">Kept adding protocols and obfuscations. It worked again.</span></div></div>
+      </div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:18px; font-size:26px;">The macro timeline, lived personally. <em class="hl" data-comment-anchor="c92ab5ed18-em">You never fail until you stop trying.</em></p>
+    <div class="slide-num mono">09</div>
+  </section>
+  <style>
+    .arc-card{ border:1px solid var(--ac-line); background:var(--ac-dim); border-radius:var(--radius-lg); padding:28px 34px; display:flex; flex-direction:column; gap:20px; }
+    .arc-eyebrow{ font-size:22px; letter-spacing:0.08em; text-transform:uppercase; color:#ff8c00; margin:0; }
+    .arc-step{ display:flex; gap:22px; align-items:flex-start; }
+    .arc-step > div{ display:flex; flex-direction:column; gap:6px; }
+    .arc-dot{ width:16px; height:16px; border-radius:50%; margin-top:8px; flex-shrink:0; }
+    .arc-dot.ok{ background:var(--moav-green); box-shadow:0 0 12px rgba(0,255,136,0.6); }
+    .arc-dot.bad{ background:var(--moav-red); box-shadow:0 0 12px rgba(255,71,87,0.6); }
+    .arc-when{ font-size:22px; font-weight:600; letter-spacing:0.1em; color:var(--moav-text-3); }
+    .arc-net{ font-size:24px; color:var(--moav-text-3); }
+    .arc-txt{ font-size:25px; line-height:1.4; color:var(--moav-white); }
+  </style>
+
+  <!-- ============================== SLIDE 10 — RAGE CODING: THE ARSENAL ============================== -->
+  <section class="slide grid-tex" data-screen-label="10 Arsenal">
+    <p class="kicker anim">One command</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:26ch;">Turn anyone into an arsenal of VPN protocols</h1>
+
+    <div class="anim d2" style="margin-top:40px; flex:1; display:grid; grid-template-columns: 1fr 0.92fr; gap:64px; align-items:center; min-height:0;">
+      <div class="term">
+        <div class="term-bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>moav · install</span></div>
+        <div class="term-body" style="font-size:25px;">
+          <div><span class="pr">$</span> <span class="cm">curl -fsSL moav.sh/install.sh | bash</span></div>
+          <div style="margin-top:14px;" class="protos">
+            <span class="up">Reality</span><span class="up">Hysteria2</span><span class="up">Trojan</span><span class="up">WireGuard</span><span class="up">AmneziaWG</span><span class="up">Shadowsocks-2022</span><span class="up">MTProxy</span><span class="up">TrustTunnel</span><span class="up">XHTTP</span><span class="up">CDN-fronted</span><span class="up">SNI-Spoof</span><span class="up" data-comment-anchor="1bc2cceb3e-span">GooseRelay</span><span class="up">dnstt</span><span class="up">Slipstream</span><span class="up">MasterDNS</span><span class="up">XDNS</span>
+          </div>
+          <div style="margin-top:18px;" class="dim">────────────────────────────</div>
+          <div style="margin-top:10px;"><span class="ok">●</span> <span class="cy">All protocols up. 16+ active.</span></div>
+          <div class="dim" style="margin-top:6px;"> ~$5 VPS · ten minutes</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:26px;">
+        <p class="body" style="font-size:30px; color:var(--moav-white);">Not the best protocol — <em class="hl">every protocol.</em> 16+ running at once.</p>
+        <div style="border-left:3px solid var(--moav-cyan); padding-left:24px;">
+          <p class="body" style="font-size:28px;">The censor has to block <span class="white">every</span> one. You only need <span class="white">one</span> to get through.</p>
+        </div>
+        <p class="body" style="font-size:28px;">A stranger with a spare VPS becomes infrastructure — in Iran one shared node ran a household, a classroom, a whole <em class="hl">neighborhood</em>; one seller served hundreds of thousands.</p>
+        <p class="mono" style="font-size:26px; margin:6px 0 0; color:var(--moav-text-2);"><span style="color:var(--moav-cyan); font-weight:600;">MoaV</span> — Mother of All VPNs.</p>
+      </div>
+    </div>
+    <div class="slide-num mono">10</div>
+  </section>
+  <style>
+    .protos{ display:flex; flex-wrap:wrap; gap:10px; }
+    .protos .up{ font-size:21px; padding:5px 12px; border-radius:var(--radius-xs); background:var(--moav-cyan-dim); border:1px solid var(--moav-cyan-line); color:var(--moav-cyan); white-space:nowrap; }
+  </style>
+
+  <!-- ============================== SLIDE 11 — MOAV: WHY ============================== -->
+  <section class="slide grid-tex" data-screen-label="11 MoaV — Why">
+    <p class="kicker anim">How it works · the race</p>
+    <h1 class="title anim d1" style="margin-top:18px; max-width:30ch;">The window opens for days. You have to be ready.</h1>
+
+    <div class="anim d2" style="margin-top:30px; flex:1; display:grid; grid-template-columns: 1.12fr 0.88fr; gap:56px; align-items:center; min-height:0;">
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div class="why-step">
+          <span class="why-n mono">1</span>
+          <div><p class="why-h">Find a crack</p><p class="why-d">Scanners inside Iran sweep for IP ranges still reachable during the blackout — sometimes a whole cloud region (e.g. <span class="white">Azure North Africa</span>) is briefly open.</p></div>
+        </div>
+        <div class="why-step">
+          <span class="why-n mono">2</span>
+          <div><p class="why-h">Land an IP inside it</p><p class="why-d">Hard problem #1: actually get a VPS with an IP <span class="white">inside that open range</span> before it's closed.</p></div>
+        </div>
+        <div class="why-step">
+          <span class="why-n mono" style="border-color:var(--moav-red); color:var(--moav-red);">3</span>
+          <div><p class="why-h">Beat the clock</p><p class="why-d">Hard problem #2: the crack stays open only <span class="white">a few days</span>. The moment you have it, traffic has to flow — <em class="hl" style="color:var(--moav-red);">now</em>.</p></div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <svg viewBox="0 0 520 280" style="width:100%; height:auto;">
+          <rect x="36" y="150" width="448" height="64" rx="8" fill="#0b0e16" stroke="var(--border-strong)"/>
+          <rect x="38" y="152" width="232" height="60" rx="6" fill="rgba(0,255,136,0.13)"/>
+          <rect x="270" y="152" width="212" height="60" rx="6" fill="rgba(255,71,87,0.15)"/>
+          <line x1="270" y1="144" x2="270" y2="220" stroke="var(--moav-red)" stroke-width="3"/>
+          <text x="154" y="187" text-anchor="middle" fill="var(--moav-green)" font-family="'JetBrains Mono',monospace" font-size="20" font-weight="600">OPEN · a few days</text>
+          <text x="377" y="187" text-anchor="middle" fill="var(--moav-red)" font-family="'JetBrains Mono',monospace" font-size="20" font-weight="600">SHUT</text>
+          <line x1="98" y1="96" x2="98" y2="150" stroke="var(--moav-cyan)" stroke-width="2" stroke-dasharray="4 4"/>
+          <polygon points="98,150 92,138 104,138" fill="var(--moav-cyan)"/>
+          <text x="98" y="86" text-anchor="middle" fill="var(--moav-cyan)" font-family="'JetBrains Mono',monospace" font-size="18" font-weight="600">deploy here</text>
+          <text x="98" y="64" text-anchor="middle" fill="var(--moav-text-3)" font-family="'JetBrains Mono',monospace" font-size="15">~10 min · one command</text>
+          <text x="38" y="244" fill="var(--moav-text-3)" font-family="'JetBrains Mono',monospace" font-size="15">range opens</text>
+          <text x="482" y="244" text-anchor="end" fill="var(--moav-text-3)" font-family="'JetBrains Mono',monospace" font-size="15">range burned</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="anim d3 why-punch">
+      <span class="why-punch-k mono">MoaV's answer</span>
+      <p>One command stands up the whole stack — and starts <span class="white">donating bandwidth to anti-censorship protocols</span> + hands even a non-technical person <span class="white">config bundles that imports into every VPN client</span>. Online in minutes, not days.</p>
+    </div>
+    <div class="slide-num mono">11</div>
+  </section>
+  <style>
+    .why-step{ display:flex; gap:20px; align-items:flex-start; }
+    .why-n{ width:46px; height:46px; flex-shrink:0; border:1px solid var(--moav-cyan-line); color:var(--moav-cyan); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600; }
+    .why-h{ font-size:27px; font-weight:700; color:var(--moav-white); margin:0 0 4px; }
+    .why-d{ font-size:23px; line-height:1.45; color:var(--moav-text-2); margin:0; }
+    .why-d .white{ color:var(--moav-white); font-weight:600; }
+    .why-punch{ margin-top:24px; display:flex; align-items:center; gap:24px; border:1px solid var(--moav-cyan-line); background:var(--moav-cyan-dim); border-radius:var(--radius-lg); padding:20px 28px; }
+    .why-punch-k{ font-size:20px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-cyan); flex-shrink:0; }
+    .why-punch p{ font-size:26px; line-height:1.4; color:var(--moav-text-2); margin:0; }
+    .why-punch .white{ color:var(--moav-white); font-weight:600; }
+  </style>
+
+  <!-- ============================== SLIDE 12 — MOAV: ARCHITECTURE ============================== -->
+  <section class="slide grid-tex" data-screen-label="12 MoaV — Architecture">
+    <p class="kicker anim">How it works · anatomy</p>
+    <h1 class="title anim d1" style="margin-top:16px; max-width:36ch;">One box, every route out</h1>
+
+    <div class="anim d2 arch" style="margin-top:22px; flex:1; min-height:0;">
+      <p class="arch-zone mono">⚠ behind the wall · people inside the censored region</p>
+      <div class="arch-sources">
+        <div class="arch-node user clients">
+          <span class="an-k mono">your clients · one bundle imports into every app</span>
+          <div class="client-row">
+            <span class="cli"><img class="cli-ic" src="assets/clients/hiddify.png" alt="">Hiddify</span><span class="cli"><img class="cli-ic" src="assets/clients/v2rayng.png" alt="">v2rayNG</span><span class="cli"><img class="cli-ic" src="assets/clients/nekobox.png" alt="">NekoBox</span><span class="cli"><img class="cli-ic" src="assets/clients/singbox.png" alt="">sing-box</span><span class="cli"><img class="cli-ic" src="assets/clients/happ.png" alt="">Happ</span><span class="cli"><img class="cli-ic" src="assets/clients/clash.png" alt="">Clash</span><span class="cli"><img class="cli-ic" src="assets/clients/wireguard.png" alt="">WireGuard</span><span class="cli"><img class="cli-ic" src="assets/clients/streisand.webp" alt="">Streisand</span><span class="cli"><img class="cli-ic" src="assets/clients/amneziawg.png" alt="">AmneziaWG</span><span class="cli"><img class="cli-ic" src="assets/clients/trusttunnel.png" alt="">TrustTunnel</span><span class="cli"><img class="cli-ic" src="assets/clients/mahsang.png" alt="">MahsaNG</span><span class="cli"><img class="cli-ic" src="assets/clients/mahsanet.png" alt="">MahsaNet</span>
+          </div>
+        </div>
+        <div class="arch-node user ext"><img class="node-ic" src="assets/clients/psiphon.png" alt=""><div class="node-txt"><span class="an-k mono">Psiphon users</span><span class="an-s">in censored regions · 6M+ Users</span></div></div>
+        <div class="arch-node user ext"><img class="node-logo" src="assets/clients/tor.svg" alt=""><div class="node-txt"><span class="an-k mono">Tor users</span><span class="an-s">in censored regions</span><span class="cli onion"><img class="cli-ic" src="assets/clients/onionbrowser.webp" alt="">Onion Browser</span></div></div>
+      </div>
+
+      <div class="arch-arrows top">
+        <span class="dn y"></span><span class="dn y"></span><span class="dn y"></span>
+      </div>
+      <div class="arch-band restricted">
+        <span class="bd-h mono">RESTRICTED INTERNET</span>
+        <span class="bd-s">DPI · throttling · IP blocks&nbsp;·&nbsp;<svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"/></svg>Cloudflare(/Amazon Cloudfront) CDN hop when your IP is blocked</span>
+      </div>
+      <div class="arch-arrows mid">
+        <span class="dn c"></span><span class="dn c"></span><span class="dn c"></span><span class="dn c"></span>
+      </div>
+
+      <div class="arch-box">
+        <span class="box-tag mono">MoaV — one small box · 16+ protocols on a handful of shared ports</span>
+        <div class="arch-cols">
+          <div class="arch-out">
+            <div class="pgroup"><p class="pg-h mono">Stealth proxy</p><div class="pg-chips"><span>Reality</span><span>Trojan</span><span>Hysteria2</span><span>XHTTP</span><span>CDN</span></div></div>
+            <div class="pgroup"><p class="pg-h mono">Full VPN</p><div class="pg-chips"><span>WireGuard</span><span>AmneziaWG</span><span>wstunnel</span></div></div>
+            <div class="pgroup"><p class="pg-h mono">Specialty</p><div class="pg-chips"><span>TrustTunnel</span><span>MTProxy</span><span>Shadowsocks</span><span>GooseRelay</span></div></div>
+            <div class="pgroup floor"><p class="pg-h mono">DNS floor · port 53</p><div class="pg-chips"><span>dnstt</span><span>Slipstream</span><span>MasterDNS</span><span>XDNS</span></div></div>
+          </div>
+          <div class="arch-give">
+            <p class="pg-h mono" style="color:#ff8c00;">Bandwidth donation</p>
+            <span class="give-row">Conduit → Psiphon</span>
+            <span class="give-row">Snowflake → Tor</span>
+            <span class="give-row">MahsaNet → configs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrows out">
+        <span class="dn g"></span><span class="dn g"></span><span class="dn g"></span>
+      </div>
+      <div class="arch-band open"><span class="bd-h mono">OPEN INTERNET</span></div>
+    </div>
+    <p class="src"><b>ARCHITECTURE</b>github.com/shayanb/MoaV · moav.sh/docs · stealth-first: it all looks like normal HTTPS, DNS, or a video call</p>
+    <div class="slide-num mono">12</div>
+  </section>
+  <style>
+    .arch{ display:flex; flex-direction:column; gap:8px; }
+    .arch-sources{ display:grid; grid-template-columns: 1.8fr 1fr 1fr; gap:16px; }
+    .arch-sources.two{ grid-template-columns: 1fr 1fr; }
+    .arch-node.full{ width:100%; }
+    .node-logo{ height:26px; width:auto; max-width:74px; object-fit:contain; flex-shrink:0; }
+    .cli.onion{ align-self:flex-start; margin-top:6px; }
+    .arch-arrows.top4{ display:grid; grid-template-columns:repeat(4,1fr); justify-items:center; }
+    .arch-node{ border:1px solid var(--border-strong); background:var(--moav-ink-600); border-radius:var(--radius-md); padding:11px 18px; display:flex; flex-direction:column; gap:7px; justify-content:center; }
+    .arch-node.clients{ border-color:var(--moav-cyan-line); }
+    .arch-node.ext{ flex-direction:row; align-items:center; gap:11px; }
+    .node-ic{ width:30px; height:30px; border-radius:7px; object-fit:cover; flex-shrink:0; }
+    .node-txt{ display:flex; flex-direction:column; gap:3px; }
+    .an-k{ font-size:18px; font-weight:600; letter-spacing:0.03em; color:var(--moav-cyan); }
+    .arch-node.ext .an-k{ color:var(--moav-text-2); }
+    .an-s{ font-size:17px; color:var(--moav-text-3); }
+    .client-row{ display:flex; flex-wrap:wrap; gap:7px; }
+    .cli{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:16px; padding:3px 9px 3px 5px; border-radius:var(--radius-xs); background:var(--moav-cyan-dim); border:1px solid var(--moav-cyan-line); color:var(--moav-cyan); white-space:nowrap; }
+    .cli.qr{ padding:3px 9px; color:var(--moav-text-3); border-style:dashed; }
+    .cli-ic{ width:18px; height:18px; border-radius:4px; object-fit:cover; flex-shrink:0; background:#fff; }
+    .arch-arrow{ text-align:center; color:var(--moav-text-3); font-size:15px; line-height:1; }
+    .arch-band{ display:flex; align-items:center; gap:18px; padding:9px 20px; border-radius:var(--radius-sm); border:1px dashed; }
+    .arch-band.restricted{ border-color:rgba(255,71,87,0.5); background:rgba(255,71,87,0.06); }
+    .arch-band.open{ border-color:rgba(0,255,136,0.45); background:rgba(0,255,136,0.05); justify-content:center; border-style:solid; }
+    .bd-h{ font-size:18px; font-weight:600; letter-spacing:0.14em; }
+    .arch-band.restricted .bd-h{ color:var(--moav-red); }
+    .arch-band.open .bd-h{ color:var(--moav-green); }
+    .bd-s{ font-size:17px; color:var(--moav-text-2); display:flex; align-items:center; gap:7px; }
+    .bi{ width:16px; height:16px; fill:currentColor; flex-shrink:0; }
+    .arch-box{ border:1px solid var(--moav-cyan-line); background:rgba(0,212,255,0.04); border-radius:var(--radius-lg); padding:13px 18px 15px; }
+    .box-tag{ font-size:18px; letter-spacing:0.05em; color:var(--moav-cyan); display:block; margin-bottom:12px; }
+    .arch-cols{ display:grid; grid-template-columns: 3.1fr 1.1fr; gap:18px; }
+    .arch-out{ display:grid; grid-template-columns: repeat(4,1fr); gap:14px; }
+    .pgroup{ display:flex; flex-direction:column; gap:8px; }
+    .pg-h{ font-size:16px; letter-spacing:0.05em; text-transform:uppercase; color:var(--moav-text-3); margin:0; }
+    .pgroup.floor .pg-h{ color:var(--moav-green); }
+    .pg-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+    .pg-chips span{ font-family:var(--font-mono); font-size:16px; padding:4px 9px; border-radius:var(--radius-xs); background:var(--moav-ink-600); border:1px solid var(--border-strong); color:var(--moav-text-2); white-space:nowrap; }
+    .pgroup.floor .pg-chips span{ border-color:rgba(0,255,136,0.3); color:var(--moav-green); }
+    .arch-give{ display:flex; flex-direction:column; gap:9px; border-left:1px solid var(--border-default); padding-left:18px; }
+    .give-row{ font-family:var(--font-mono); font-size:16px; color:#ffb86a; }
+    .arch-zone{ font-size:16px; letter-spacing:0.06em; color:var(--moav-yellow); margin:0 0 8px; }
+    .arch-node.user{ border-color:rgba(255,208,0,0.5); background:rgba(255,208,0,0.05); }
+    .arch-node.user .an-k{ color:var(--moav-yellow); }
+    .arch-arrows{ display:flex; justify-content:space-evenly; align-items:center; padding:3px 0; }
+    .arch-arrows.top{ display:grid; grid-template-columns:1.8fr 1fr 1fr; justify-items:center; }
+    .dn{ position:relative; width:2px; height:24px; background:currentColor; filter:drop-shadow(0 0 4px currentColor); }
+    .dn::after{ content:""; position:absolute; left:50%; bottom:-2px; width:11px; height:11px; border-right:2.5px solid currentColor; border-bottom:2.5px solid currentColor; transform:translate(-50%,0) rotate(45deg); }
+    .dn.y{ color:var(--moav-yellow); }
+    .dn.c{ color:var(--moav-cyan); }
+    .dn.g{ color:var(--moav-green); }
+  </style>
+
+  <!-- ============================== SLIDE 13 — MOAV: SCREENSHOTS ============================== -->
+  <section class="slide grid-tex" data-screen-label="13 MoaV — Screenshots">
+    <p class="kicker anim">MoaV · what it actually looks like</p>
+    <h1 class="title anim d1" style="margin-top:16px; max-width:30ch;">One command. Then it just runs.</h1>
+
+    <div class="anim d2 shots" style="position:relative; z-index:8; margin-top:20px; flex:1; display:grid; grid-template-columns: 0.78fr 1.12fr; gap:34px; min-height:0;">
+      <figure class="shot feature"><img src="assets/moav_tui.png" alt="MoaV interactive TUI menu"><figcaption>one command → the interactive TUI</figcaption></figure>
+      <div class="feat-cards">
+        <div class="feat-card">
+          <img class="feat-thumb" src="assets/moav_adminpanel.png" alt="MoaV admin dashboard">
+          <div class="feat-meta"><p class="feat-h">Admin dashboard</p><p class="feat-d">Add or revoke users, hand out config bundles (complete guide included for each protocol with detailed instructions), watch live traffic, toggle donations.</p></div>
+        </div>
+        <div class="feat-card">
+          <img class="feat-thumb" src="assets/moav_grafana.png" alt="MoaV Grafana metrics">
+          <div class="feat-meta"><p class="feat-h">Grafana metrics</p><p class="feat-d">Per-protocol throughput and GeoIP &mdash; who&rsquo;s connecting, from where, using which protocol, in real time.</p></div>
+        </div>
+      </div>
+    </div>
+    <p class="body anim d3" style="margin-top:14px; font-size:23px; color:var(--moav-text-2);">The whole focus is UX, for the server operator and the end user alike. Config bundles are generated so <em class="hl">even your grandma can get online on her phone</em> <span style="filter:grayscale(1);">🤞</span></p>
+    <div class="slide-num mono">13</div>
+  </section>
+  <style>
+    .shots .shot{ margin:0; display:flex; flex-direction:column; min-height:0; }
+    .shot img{ width:100%; height:100%; min-height:0; object-fit:contain; object-position:center; border:1px solid var(--moav-cyan-line); border-radius:var(--radius-md); background:#06060a; }
+    .shot figcaption{ font-family:var(--font-mono); font-size:16px; color:var(--moav-text-3); margin-top:8px; letter-spacing:0.01em; }
+    /* right column: two supporting feature cards */
+    .feat-cards{ display:flex; flex-direction:column; gap:28px; min-height:0; height:100%; box-sizing:border-box; padding-bottom:30px; }
+    .feat-card{ flex:1 1 0; min-height:0; display:flex; align-items:stretch; gap:24px; padding:18px; border:1px solid var(--moav-border-strong, var(--moav-cyan-line)); border-radius:var(--radius-lg, 16px); background:rgba(255,255,255,0.018); }
+    .feat-thumb{ width:392px; height:100%; flex:0 0 auto; object-fit:cover; object-position:top left; border:1px solid var(--moav-cyan-line); border-radius:var(--radius-sm, 8px); background:#06060a; }
+    .feat-meta{ display:flex; flex-direction:column; justify-content:center; gap:7px; min-width:0; }
+    .feat-h{ margin:0; font-size:27px; font-weight:700; color:#fff; letter-spacing:-0.01em; }
+    .feat-d{ margin:0; font-size:20px; line-height:1.42; color:var(--moav-text-2); }
+  </style>
+
+  <!-- ============================== SLIDE 14 — THE ARMS RACE ============================== -->
+  <section class="slide grid-tex" data-screen-label="14 The Arms Race">
+    <p class="kicker anim">The arms race</p>
+    <h1 class="title anim d1" style="margin-top:18px; max-width:32ch;">They block the obvious. Creative resilience routes around it.</h1>
+
+    <div class="anim d1" style="margin-top:26px;">
+      <p class="mono" style="font-size:22px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-red); margin:0 0 14px;">Step 1 — DPI fingerprints each protocol</p>
+      <div class="blocked-row">
+        <span class="blk">OpenVPN</span>
+        <span class="blk">WireGuard</span>
+        <span class="blk">IKEv2</span>
+        <span class="blk">Shadowsocks</span>
+        <span class="blk-label mono">→ blocked, one by one</span>
+      </div>
+    </div>
+
+    <p class="anim d2 mono" style="font-size:22px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-cyan); margin:30px 0 16px;">Step 2 — hide inside the infrastructure they can't switch off, because they need it too</p>
+    <div class="anim d2" style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:22px; min-height:0; align-items:start;">
+      <div class="card card-top arms">
+        <p class="arms-q mono">Reads your TLS handshake</p>
+        <h3 class="arms-h">SNI Spoofing</h3>
+        <p class="arms-d">A decoy ClientHello says <span class="mono ac">update.samsung.com</span>. The real connection runs underneath.</p>
+      </div>
+      <div class="card card-top arms">
+        <p class="arms-q mono">Can't afford to block</p>
+        <h3 class="arms-h">GooseRelay</h3>
+        <p class="arms-d">Exits via <span class="mono ac">script.google.com</span> — Google Apps Script, similarly Google drive API was open for a few days.</p>
+      </div>
+      <div class="card card-top arms">
+        <p class="arms-q mono">Even the state's own app</p>
+        <h3 class="arms-h">BaleVPN</h3>
+        <p class="arms-d">Rides <span class="white">Bale</span>, Iran's approved chat app, through its <span class="mono ac">WebRTC video-call</span>. Same trick as <span class="white">Protozoa</span> in China &amp; Russia.</p>
+        <!-- <p class="arms-d" style="font-size:21px; color:var(--moav-text-3); margin-top:auto;">Same move: <span class="white">SHAD</span>, the regime's own school app, carried configs too.</p> -->
+      </div>
+      <div class="card card-top arms" style="--ac:var(--moav-green);">
+        <p class="arms-q mono">The floor of the network</p>
+        <h3 class="arms-h" style="color:var(--moav-green);">4 DNS tunnels</h3>
+        <p class="arms-d">One port. Kill DNS and you break your own country. Slow — but enough to file one story.</p>
+      </div>
+    </div>
+    <p class="body anim d3" style="margin-top:26px; font-size:27px;">What stays up in a blackout is what the regime needs to function: DNS, Google services, even its own apps. <em class="hl">So that's exactly where we hide.</em></p>
+    <p class="src"><b>SOURCES</b>Protozoa: Barradas et al., ACM CCS 2020 · SNI spoofing, GooseRelay, BaleVPN: github.com/shayanb/MoaV · SHAD: Qalandar et al., CHI '26</p>
+    <div class="slide-num mono">14</div>
+  </section>
+  <style>
+    .blocked-row{ display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+    .blk{ font-family:var(--font-mono); font-size:25px; font-weight:500; padding:12px 20px; border-radius:var(--radius-sm); border:1px solid rgba(255,71,87,0.4); background:rgba(255,71,87,0.07); color:var(--moav-text-2); text-decoration:line-through; text-decoration-color:var(--moav-red); text-decoration-thickness:2px; }
+    .blk-label{ font-size:24px; color:var(--moav-red); font-weight:600; letter-spacing:0.04em; white-space:nowrap; }
+    .arms{ display:flex; flex-direction:column; justify-content:flex-start; gap:16px; padding:28px 26px; min-height:380px; }
+    .arms-q{ font-size:23px; color:var(--moav-text-3); line-height:1.4; margin:0; }
+    .arms-h{ font-family:var(--font-sans); font-size:32px; font-weight:700; color:var(--ac); margin:0; padding-top:14px; border-top:1px solid var(--border-default); }
+    .arms-d{ font-size:23px; line-height:1.5; color:var(--moav-text-2); margin:0; }
+    .arms-d .white{ color:var(--moav-white); font-weight:600; }
+  </style>
+
+  <!-- ============================== SLIDE 15 — THE FRONTIER ============================== -->
+  <section class="slide grid-tex" data-screen-label="15 The Frontier">
+    <p class="kicker anim">The frontier</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:34ch;">What's been hacked together and what's still waiting for you</h1>
+
+    <div class="anim d2" style="margin-top:34px; flex:1; display:grid; grid-template-columns:1fr 1fr; gap:56px; min-height:0; align-items:start;" data-comment-anchor="cff38a642d-div">
+      <div>
+        <p class="fr2-head built mono">Built — often by people on the inside, trying to get out</p>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">GitHub covert channel</span><span class="fr2-desc" data-comment-anchor="e19f8569cd-span">Git objects &amp; CI artifacts — routes the regime kept open for itself.</span></div><span class="tag poc">PoC</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Google Apps Script relay</span><span class="fr2-desc">Exits via script.google.com.</span></div><span class="tag warn">acct risk</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">TCP over WhatsApp</span><span class="fr2-desc">wa-tunnel, rides WhatsApp Web.</span></div><span class="tag warn">ban risk</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">thefeed</span><span class="fr2-desc" data-comment-anchor="10776f8adb-span">Telegram over DNS. Taken down by the state — the community revived it.</span></div><span class="tag ok">works</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Nedagram</span><span class="fr2-desc">Send VPN configs over a phone call — as sound.</span></div><span class="tag ok">works</span></div>
+      </div>
+      <div class="fr2-theory">
+        <p class="fr2-head lost mono">Half-built, high-risk, or still theory · <span class="fr2-move">YOUR MOVE</span></p>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Starlink neighbor-sharing</span><span class="fr2-desc" data-comment-anchor="052c0d63c9-span">NasNet / neighbor-link shares your connection with the block. Real — but detection means arrest.</span></div><span class="tag warn">arrest risk</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Power-line networking</span><span class="fr2-desc">Share one link across a building today. Can we get past the transformers?</span></div><span class="tag cta" data-comment-anchor="4bdcf333c2-span">Hack it</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Dial-up revival</span><span class="fr2-desc">POTS modem to a foreign ISP. Phone lines outlive IP (Egypt '11).</span></div><span class="tag cta">Dial it</span></div>
+        <div class="fr2-row"><div class="fr2-main"><span class="fr2-name">Offline-payment rails</span><span class="fr2-desc">A signed tx is just bytes: carry it over any channel that moves data (next slide).</span></div><span class="tag cta" data-comment-anchor="7bfd63bcde-span">build it</span></div>
+      </div>
+    </div>
+    <p class="body anim d3" style="margin-top:14px; margin-bottom:38px; font-size:26px;">The tools that work were built by people <em class="hl">living</em> the blackout; what researchers now call <em class="hl">grassroots infrastructuring: survival work</em></p>
+    <p class="src"><b>REPOS</b>thefeed · NasNet/neighbor-link · javidnetworkwatch.com · Dial-up: FDN/Telecomix, Egypt 2011 · Survival work: Qalandar et al., CHI '26</p>
+    <div class="slide-num mono">15</div>
+  </section>
+  <style>
+    .fr2-head{ font-size:21px; letter-spacing:0.06em; text-transform:uppercase; margin:0 0 8px; line-height:1.3; }
+    .fr2-head.built{ color:var(--moav-cyan); }
+    .fr2-head.lost{ color:var(--moav-text-3); }
+    .fr2-move{ color:var(--moav-cyan); font-weight:700; }
+    .fr2-theory{ opacity:0.96; }
+    .fr2-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:18px; padding:10px 0; border-top:1px solid var(--border-default); }
+    .fr2-main{ display:flex; flex-direction:column; gap:4px; }
+    .fr2-name{ font-size:26px; font-weight:600; color:var(--moav-white); }
+    .fr2-desc{ font-size:21px; color:var(--moav-text-2); line-height:1.35; }
+    .fr2-row .tag{ flex-shrink:0; margin-top:4px; }
+    .fr2-theory .tag{ color:var(--moav-text-3); border-color:var(--border-active); background:transparent; }
+    .fr2-theory .tag.warn{ color:var(--moav-yellow); border-color:rgba(255,208,0,0.4); background:var(--moav-yellow-dim, rgba(255,208,0,0.12)); }
+    .fr2-theory .tag.cta{ color:var(--moav-cyan); border-color:var(--moav-cyan-line); background:var(--moav-cyan-dim); font-weight:600; white-space:normal; max-width:150px; text-align:center; line-height:1.2; }
+  </style>
+
+  <!-- ============================== SLIDE 16 — NEDAGRAM (showpiece) ============================== -->
+  <section class="slide glow" data-screen-label="16 Nedagram">
+    <p class="kicker anim">Nedagram · Another rage-coding project in the blackout</p>
+    <h1 class="title anim d1" style="margin-top:22px; max-width:34ch;" data-comment-anchor="fcbcd20741-h1">When even SMS is gone, voice calls still carry data</h1>
+
+    <div class="anim d2" style="position:relative; z-index:8; margin-top:22px; flex:1; display:grid; grid-template-columns: auto 1.5fr auto; gap:40px; align-items:center; min-height:0;">
+      <img class="ned-phone" src="assets/Nedagram_send.png" alt="Nedagram send screen — type a config, encode it to sound">
+      <div class="ned-mid">
+        <div class="spectro">
+          <svg viewBox="0 0 640 280" preserveAspectRatio="none" width="100%" height="100%">
+            <defs>
+              <linearGradient id="tone" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#22e0ff"/><stop offset="1" stop-color="#6ad1ff"/>
+              </linearGradient>
+            </defs>
+            <!-- 4 MFSK frequency lanes -->
+            <g stroke="rgba(0,212,255,0.18)" stroke-width="1" stroke-dasharray="3 7">
+              <line x1="78" y1="40" x2="632" y2="40"/><line x1="78" y1="100" x2="632" y2="100"/>
+              <line x1="78" y1="160" x2="632" y2="160"/><line x1="78" y1="220" x2="632" y2="220"/>
+            </g>
+            <g fill="#5d7488" font-family="monospace" font-size="15" text-anchor="end">
+              <text x="66" y="45">2300</text><text x="66" y="105">1800</text><text x="66" y="165">1300</text><text x="66" y="225">800</text>
+            </g>
+            <!-- preamble: warmup + chirp sweep, then data tones (Nedagram signal shape) -->
+            <line x1="208" y1="30" x2="208" y2="232" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3 5"/>
+            <path d="M78,220 H120 L208,40 H240 L262,160 H294 L316,100 H348 L370,220 H402 L424,100 H456 L478,160 H510 L532,40 H564 L586,160 H610" fill="none" stroke="url(#tone)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" filter="drop-shadow(0 0 6px rgba(34,224,255,0.55))" data-comment-anchor="29e42a1cdf-path"/>
+            <g fill="#22e0ff">
+              <circle cx="224" cy="40" r="5"/><circle cx="278" cy="160" r="5"/><circle cx="332" cy="100" r="5"/><circle cx="386" cy="220" r="5"/><circle cx="440" cy="100" r="5"/><circle cx="494" cy="160" r="5"/><circle cx="548" cy="40" r="5"/><circle cx="598" cy="160" r="5"/>
+            </g>
+            <g fill="#5d7488" font-family="monospace" font-size="14" text-anchor="middle">
+              <text x="143" y="22">chirp sync</text><text x="420" y="22">data tones</text>
+            </g>
+            <!-- the audio waveform underneath (sound) -->
+            <path d="M78,255.9L82,254.3L86,253.8L90,254.2L94,254.7L98,254.5L102,253.2L106,251.4L110,250.0L114,250.3L118,252.8L122,257.2L126,262.4L130,266.6L134,268.7L138,268.3L142,266.2L146,263.9L150,262.6L154,262.9L158,263.9L162,264.4L166,262.8L170,258.7L174,252.9L178,247.0L182,243.2L186,242.7L190,245.3L194,249.8L198,254.1L202,256.9L206,257.7L210,257.4L214,257.4L218,259.0L222,262.5L226,267.1L230,271.0L234,272.5L238,270.9L242,266.7L246,261.4L250,256.7L254,254.0L258,253.4L262,254.1L266,254.7L270,254.3L274,252.8L278,250.7L282,249.4L286,249.8L290,252.0L294,255.6L298,259.3L302,261.9L306,263.1L310,262.9L314,262.3L318,261.5L322,261.2L326,261.9L330,263.0L334,263.9L338,263.3L342,260.7L346,256.4L350,251.7L354,248.0L358,246.5L362,247.5L366,250.2L370,253.2L374,255.1L378,255.5L382,254.9L386,254.7L390,256.3L394,260.1L398,265.4L402,270.5L406,273.5L410,273.2L414,269.7L418,264.5L422,259.4L426,256.1L430,255.1L434,255.5L438,255.8L442,254.7L446,251.7L450,247.9L454,244.7L458,244.0L462,246.3L466,251.2L470,257.1L474,262.1L478,264.9L482,265.3L486,264.1L490,262.9L494,262.6L498,263.6L502,265.1L506,266.0L510,265.2L514,262.6L518,258.7L522,254.8L526,252.0L530,251.1L534,251.8L538,253.5L542,254.9L546,255.6L550,255.4L554,254.7L558,254.3L562,255.1L566,257.5L570,261.4L574,265.6L578,268.6L582,269.5L586,267.9L590,264.7L594,261.2L598,258.8L602,257.9L606,258.2L610,258.3" fill="none" stroke="rgba(34,224,255,0.7)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+          <div class="spectro-flow mono">
+            <span>type config</span><span class="ar">→</span><span class="cy">sound</span><span class="ar">→</span><span>config</span>
+          </div>
+        </div>
+        <p class="ned-rs mono"><em class="hl">Same tech NASA uses to hear Voyager from interstellar space.</em></p>
+        <p class="ned-under mono">Reed–Solomon error correction · <b>~20 bps</b> over a noisy phone call · fully offline PWA</p>
+        <p class="ned-under mono"><a href="https://nedagram.com" style="color:var(--moav-cyan); text-decoration:none;">nedagram.com</a> · <a href="https://github.com/shayanb/Nedagram" style="color:var(--moav-cyan); text-decoration:none;">github.com/shayanb/Nedagram</a></p>
+        <p class="ned-cmd mono"><span class="pr">$</span> npm i nedagram</p>
+      </div>
+      <img class="ned-phone" src="assets/nedagram_receive.jpg" alt="Nedagram receive screen — decoded config and QR">
+    </div>
+    <p class="body anim d3" style="margin-top:12px; font-size:24px;"><span style="color:var(--moav-cyan);">Neda</span> — Persian for "voice." When the internet fails, sound finds a way.</p>
+    <div class="slide-num mono">16</div>
+  </section>
+  <style>
+    .ned-phone{ max-height:600px; max-width:100%; width:auto; height:auto; border:1px solid var(--moav-cyan-line); border-radius:var(--radius-md); box-shadow:var(--moav-glow-cyan); display:block; }
+    .ned-mid{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+    .spectro{ background:#06080e; border:1px solid var(--moav-cyan-line); border-radius:var(--radius-lg); padding:22px 26px 16px; box-shadow:var(--moav-glow-cyan); }
+    .spectro svg{ height:208px; display:block; }
+    .spectro-flow{ display:flex; align-items:center; gap:16px; justify-content:center; margin-top:12px; font-size:22px; color:var(--moav-text-2); white-space:nowrap; }
+    .spectro-flow .cy{ color:var(--moav-cyan); }
+    .spectro-flow .ar{ color:var(--moav-cyan); }
+    .ned-rs{ font-size:24px; color:var(--moav-text-2); margin:0; letter-spacing:0.01em; }
+    .ned-under{ font-size:21px; color:var(--moav-text-3); margin:0; letter-spacing:0.01em; }
+    .ned-cmd{ display:inline-block; align-self:flex-start; font-size:20px; color:var(--moav-green); background:#06060a; border:1px solid var(--border-default); border-radius:var(--radius-sm); padding:8px 14px; margin:2px 0 0; }
+    .ned-cmd .pr{ color:var(--moav-green); margin-right:8px; opacity:0.8; }
+  </style>
+
+  <!-- ============================== SLIDE 17 — OFFLINE PAYMENTS ============================== -->
+  <section class="slide grid-tex" data-screen-label="17 Offline Payments">
+    <p class="kicker anim">Offline payments · homework for the room</p>
+    <h1 class="title anim d1" style="margin-top:18px; max-width:34ch;">A signed transaction is just data</h1>
+    <p class="body anim d1" style="margin-top:14px; font-size:27px; max-width:64ch;">Sign it anywhere, carry it over any channel, broadcast where there's signal. No product does this, and a days-long war-time outage is exactly when you'd need it.</p>
+
+    <div class="anim d2" style="margin-top:16px; display:flex; align-items:stretch; gap:18px;">
+      <div class="ofl-node sign"><span class="ofl-k mono">SIGN</span><span class="ofl-v">offline · behind GFW</span></div>
+      <div class="ofl-arrow"><span class="ofl-glyph">→</span><span class="ofl-albl mono" data-comment-anchor="af3d4b0677-span">carry</span></div>
+      <div class="ofl-node carry">
+        <span class="ofl-k mono" data-comment-anchor="50c03be016-span">CARRY · any channel that moves bytes</span>
+        <div class="carry-cloud">
+          <img class="pigeon" src="assets/pigeon.png" alt="mail-carrier pigeon carrying a signed letter">
+
+
+          <span class="cchip" style="top:0; left:2%;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12c2.2-7 4.4-7 6.6 0s4.4 7 6.6 0 4.4-7 6.6 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Nedagram</span>
+          <span class="cchip" style="top:2%; right:5%;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</span>
+          <span class="cchip" style="top:46%; left:0;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>TCP over Git</span>
+          <span class="cchip" style="bottom:0; left:18%;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.01 1.485c-2.082 0-3.754.02-3.743.047.01.02 1.708 3.001 3.774 6.62l3.76 6.574h3.76c2.081 0 3.753-.02 3.742-.047-.005-.02-1.708-3.001-3.775-6.62l-3.76-6.574zm-4.76 1.73a789.828 789.861 0 0 0-3.63 6.319L0 15.868l1.89 3.298 1.885 3.297 3.62-6.335 3.618-6.33-1.88-3.287C8.1 4.704 7.255 3.22 7.25 3.214zm2.259 12.653-.203.348c-.114.198-.96 1.672-1.88 3.287a423.93 423.948 0 0 1-1.698 2.97c-.01.026 3.24.042 7.222.042h7.244l1.796-3.157c.992-1.734 1.85-3.23 1.906-3.323l.104-.167h-7.249z"/></svg>TCP over Google</span>
+          <span class="cchip" style="bottom:0; right:24%;">WebRTC tunnel</span>
+          <span class="cchip" style="top:44%; right:0;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C6.76 0 3.1484 2.4895 3.1484 12S6.76 24 12 24c5.24 0 8.8516-2.4895 8.8516-12S17.24 0 12 0zm-.7773 1.6816l6.2148 6.2149L13.334 12l4.1035 4.1035-6.2148 6.2149V14.125l-3.418 3.42-1.2422-1.2442L10.8515 12l-4.289-4.3008 1.2422-1.2441 3.418 3.4199V1.6816zm1.748 4.2442v3.9687l1.9844-1.9843-1.9844-1.9844zm0 8.1816v3.9668l1.9844-1.9844-1.9844-1.9824Z"/></svg>Bluetooth</span>
+          <span class="cchip" style="bottom:0; left:1%;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.5v10M8.5 20.5h7M6.6 8.6a6 6 0 0 1 10.8 0M9.2 8.6a3 3 0 0 1 5.6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8.6" r="1.4" fill="currentColor"/></svg>LoRa</span>
+          <span class="cchip" style="bottom:0; right:2%;"><svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6 19 6M5 6 12 18M19 6 12 18" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="5" cy="6" r="2.4" fill="currentColor"/><circle cx="19" cy="6" r="2.4" fill="currentColor"/><circle cx="12" cy="18" r="2.4" fill="currentColor"/></svg>mesh</span>
+        </div>
+      </div>
+      <div class="ofl-arrow"><span class="ofl-glyph">→</span><span class="ofl-albl mono">broadcast</span></div>
+      <div class="ofl-node send"><span class="ofl-k mono">BROADCAST</span><span class="ofl-v">any online node</span></div>
+    </div>
+
+    <div class="anim d2" style="margin-top:14px; flex:1; display:grid; grid-template-columns: 1.05fr 0.95fr; gap:48px; min-height:0; align-items:start;">
+      <div>
+        <p class="sc-head mono">Where it stands</p>
+        <div class="sc-row"><span class="sc-name">Bitcoin · PSBT</span><span class="sc-pill ok">works</span><span class="sc-desc">Air-gapped signing, broadcast later.</span></div>
+        <div class="sc-row"><span class="sc-name">Cashu</span><span class="sc-pill mid">partial</span><span class="sc-desc">Closest. Bitcoin-only, the mint is online.</span></div>
+        <div class="sc-row"><span class="sc-name">EVM wallets</span><span class="sc-pill no">stuck</span><span class="sc-desc">Can't build a tx offline (nonce, gas estimate), nor export a signed one to another channel.</span></div>
+        <div class="sc-row"><span class="sc-name">Stablecoins offline</span><span class="sc-pill no">unsolved</span><span class="sc-desc">No shipping product.</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="wall-box">
+          <p class="wall-h mono">The constraint</p>
+          <p class="wall-t" data-comment-anchor="9c36ce5a65-p"><span class="white">Double-spend prevention trust anchor</span>: a smart card or a relay that broadcasts within minutes. Cap the amount to make <span class="white">small-value payments work today</span>. In a digital blackout, that's life-saving.</p>
+        </div>
+        <div class="ask2-box">
+          <p class="ask2-h mono">Two asks</p>
+          <p class="ask2-t"><span class="num mono">1</span> Export-and-relay — let wallets create and hand off a signed tx to carry out-of-band.</p>
+          <p class="ask2-t"><span class="num mono">2</span> ZK escrow / state-channel locks for safe low-value offline payments.</p>
+        </div>
+      </div>
+    </div>
+    <p class="src"><b>RESOURCES</b>Cashu (Chaumian ecash) · Bitcoin PSBT · BIP-174 · ERC-4337</p>
+    <div class="slide-num mono">17</div>
+  </section>
+  <style>
+    .ofl-node{ flex:1; display:flex; flex-direction:column; gap:8px; padding:20px 26px; border-radius:var(--radius-sm); border:1px solid; justify-content:center; }
+    .ofl-node .ofl-k{ font-size:22px; font-weight:600; letter-spacing:0.1em; }
+    .ofl-node .ofl-v{ font-size:25px; color:var(--moav-white); }
+    .ofl-node.sign{ border-color:var(--moav-cyan-line); background:var(--moav-cyan-dim); } .ofl-node.sign .ofl-k{ color:var(--moav-cyan); }
+    .ofl-node.carry{ flex:1.9; justify-content:flex-start; border-color:var(--border-active); border-style:dashed; }
+    .ofl-node.carry .ofl-k{ color:var(--moav-text-3); font-size:20px; }
+    .ofl-node.send{ border-color:rgba(0,255,136,0.4); background:rgba(0,255,136,0.07); } .ofl-node.send .ofl-k{ color:var(--moav-green); }
+    .carry-cloud{ position:relative; flex:1; min-height:124px; margin-top:4px; }
+    .pigeon{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); height:118px; width:auto; filter:drop-shadow(0 0 16px rgba(123,92,255,0.35)); }
+    .cchip{ position:absolute; display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:17px; color:var(--moav-text-2); background:rgba(255,255,255,0.05); border:1px solid var(--border-strong); border-radius:var(--radius-pill); padding:4px 11px; white-space:nowrap; }
+    .cic{ width:15px; height:15px; fill:currentColor; flex-shrink:0; }
+    @media (prefers-reduced-motion: no-preference){
+      [data-deck-active] .pigeon{ animation:pbob 4.5s ease-in-out infinite; }
+      [data-deck-active] .cchip{ animation:cfloat 4s ease-in-out infinite; }
+      [data-deck-active] .cchip:nth-of-type(2){ animation-delay:-2.4s; }
+      [data-deck-active] .cchip:nth-of-type(3){ animation-delay:-1.1s; }
+      [data-deck-active] .cchip:nth-of-type(4){ animation-delay:-3.0s; }
+      [data-deck-active] .cchip:nth-of-type(5){ animation-delay:-0.6s; }
+      [data-deck-active] .cchip:nth-of-type(6){ animation-delay:-1.8s; }
+      @keyframes cfloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-5px); } }
+      @keyframes pbob{ 0%,100%{ transform:translate(-50%,-50%); } 50%{ transform:translate(-50%,calc(-50% - 5px)); } }
+    }
+    .ofl-arrow{ align-self:center; display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0; }
+    .ofl-glyph{ font-size:46px; line-height:1; color:var(--moav-cyan); }
+    .ofl-albl{ font-size:18px; letter-spacing:0.12em; text-transform:uppercase; color:var(--moav-text-3); }
+    .sc-head{ font-size:21px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moav-text-3); margin:0 0 6px; }
+    .sc-row{ display:grid; grid-template-columns: 280px 130px 1fr; gap:18px; align-items:center; padding:12px 0; border-top:1px solid var(--border-default); }
+    .sc-name{ font-size:26px; font-weight:600; color:var(--moav-white); }
+    .sc-desc{ font-size:22px; color:var(--moav-text-2); line-height:1.35; }
+    .sc-pill{ font-family:var(--font-mono); font-size:20px; font-weight:600; text-align:center; padding:5px 0; border-radius:var(--radius-pill); }
+    .sc-pill.ok{ color:var(--moav-green); background:rgba(0,255,136,0.12); }
+    .sc-pill.mid{ color:var(--moav-yellow); background:rgba(255,208,0,0.12); }
+    .sc-pill.no{ color:var(--moav-red); background:rgba(255,71,87,0.12); }
+    .wall-box{ border:1px solid rgba(255,71,87,0.4); background:rgba(255,71,87,0.07); border-radius:var(--radius-lg); padding:20px 26px; }
+    .wall-h{ font-size:22px; letter-spacing:0.08em; text-transform:uppercase; color:var(--moav-red); margin:0 0 12px; }
+    .wall-t{ font-size:25px; line-height:1.45; color:var(--moav-text-2); margin:0; }
+    .wall-t .white{ color:var(--moav-white); font-weight:600; }
+    .ask2-box{ border:1px solid var(--moav-cyan-line); background:var(--moav-cyan-dim); border-radius:var(--radius-lg); padding:18px 26px; display:flex; flex-direction:column; gap:10px; }
+    .ask2-h{ font-size:22px; letter-spacing:0.08em; text-transform:uppercase; color:var(--moav-cyan); margin:0; }
+    .ask2-t{ font-size:24px; line-height:1.4; color:var(--moav-text-2); margin:0; display:flex; gap:14px; align-items:baseline; }
+    .ask2-t .num{ color:var(--moav-cyan); font-weight:700; flex-shrink:0; }
+  </style>
+
+  <!-- ============================== SLIDE 18 — POPUP MESH ============================== -->
+  <section class="slide grid-tex" data-screen-label="18 Popup Mesh">
+    <p class="kicker anim">Popup mesh</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:30ch;">We run popup cities. Why not popup mesh?</h1>
+
+    <div class="anim d2" style="margin-top:30px; flex:1; display:grid; grid-template-columns: 1.02fr 0.98fr; gap:48px; min-height:0; align-items:start;">
+      <div>
+        <p class="mono" style="font-size:22px; letter-spacing:0.08em; text-transform:uppercase; color:var(--moav-green); margin:0 0 20px;">Why Discord? The camp could run on —</p>
+        <div class="mesh-grid">
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z M3.5 6.5 12 13l8.5-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>DeltaChat</span><small>email as transport</small></span>
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3H4v18h2 M18 3h2v18h-2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="14.5" cy="12" r="1.3" fill="currentColor"/></svg>Matrix</span><small>local homeserver</small></span>
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h12v10H3z M15 10.5 21 7v10l-6-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Jitsi</span><small>P2P video</small></span>
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7.5 16 17l-4 3V4l4 3-8 9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>bitchat</span><small>Bluetooth mesh</small></span>
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12c2-6.5 4-6.5 6 0s4 6.5 6 0 4-6.5 6 0" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>Nedagram</span><small>the audio gap</small></span>
+          <span class="mesh-chip"><span class="mc-top"><svg class="mc-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9.5V20M8.5 20h7M6.5 9a8 8 0 0 1 11 0M9 9a4.5 4.5 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="9.2" r="1.3" fill="currentColor"/></svg>Meshtastic</span><small>LoRa radio</small></span>
+        </div>
+      </div>
+      <div style="height:100%; min-height:0; display:flex; flex-direction:column;">
+        <p class="mono" style="font-size:22px; letter-spacing:0.08em; text-transform:uppercase; color:var(--moav-cyan); margin:0 0 14px;">Local mesh, a few shared exits</p>
+        <svg class="mesh-diagram" viewBox="0 0 440 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <line x1="20" y1="58" x2="420" y2="58" stroke="rgba(255,71,87,0.45)" stroke-width="1.5" stroke-dasharray="4 6"/>
+          <text x="420" y="44" text-anchor="end" fill="var(--moav-red)" font-family="'JetBrains Mono',monospace" font-size="15">INTERNET</text>
+          <g stroke="var(--moav-green)" stroke-width="2" stroke-dasharray="5 5" fill="none">
+            <line x1="110" y1="150" x2="110" y2="66"/><line x1="330" y1="150" x2="330" y2="66"/>
+          </g>
+          <g fill="var(--moav-green)"><polygon points="110,58 104,72 116,72"/><polygon points="330,58 324,72 336,72"/></g>
+          <text x="110" y="92" text-anchor="middle" fill="var(--moav-green)" font-family="'JetBrains Mono',monospace" font-size="13">exit A</text>
+          <text x="330" y="92" text-anchor="middle" fill="var(--moav-green)" font-family="'JetBrains Mono',monospace" font-size="13">exit B</text>
+          <g stroke="var(--moav-cyan-line)" stroke-width="1.6">
+            <line x1="110" y1="150" x2="75" y2="240"/><line x1="110" y1="150" x2="165" y2="225"/><line x1="110" y1="150" x2="210" y2="180"/>
+            <line x1="75" y1="240" x2="165" y2="225"/><line x1="165" y1="225" x2="210" y2="180"/><line x1="165" y1="225" x2="245" y2="252"/>
+            <line x1="210" y1="180" x2="245" y2="252"/><line x1="210" y1="180" x2="330" y2="150"/><line x1="245" y1="252" x2="305" y2="248"/>
+            <line x1="305" y1="248" x2="330" y2="150"/><line x1="210" y1="180" x2="305" y2="248"/>
+          </g>
+          <g fill="var(--moav-cyan)">
+            <circle cx="110" cy="150" r="8"/><circle cx="330" cy="150" r="8"/><circle cx="75" cy="240" r="7"/><circle cx="165" cy="225" r="7"/><circle cx="245" cy="252" r="7"/><circle cx="305" cy="248" r="7"/>
+          </g>
+          <circle cx="210" cy="180" r="9" fill="var(--moav-yellow)"/>
+          <text x="210" y="205" text-anchor="middle" fill="var(--moav-yellow)" font-family="'JetBrains Mono',monospace" font-size="14">L2 payments</text>
+          <text x="200" y="292" text-anchor="middle" fill="var(--moav-cyan)" font-family="'JetBrains Mono',monospace" font-size="15">local mesh · always on</text>
+        </svg>
+      </div>
+    </div>
+
+    <p class="mono anim d2" style="font-size:21px; letter-spacing:0.06em; text-transform:uppercase; color:var(--moav-text-3); margin:14px 0 10px;">Dogfood the hard parts at the next popup —</p>
+    <div class="anim d2" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+      <div class="build-card"><span class="build-name">Local testnet</span><span class="build-desc">a chain on the LAN, no global RPC.</span></div>
+      <div class="build-card"><span class="build-name">Local payments</span><span class="build-desc">settle coffee with the internet cut.</span></div>
+      <div class="build-card"><span class="build-name">Resilient exits</span><span class="build-desc">mesh-to-mesh, a few shared bridges out.</span></div>
+      <div class="build-card"><span class="build-name">De-hobbyist-ify LoRa</span><span class="build-desc">Meshtastic as deployable as MoaV.</span></div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:16px;" data-comment-anchor="c7a896d8eb-p">Cypherpunks write code. <em class="hl">Popup cities should run it, not rent it from Telegram or Slack.</em></p>
+    <div class="slide-num mono">18</div>
+  </section>
+  <style>
+    .mesh-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .mesh-chip{ display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:1px solid var(--moav-cyan-line); background:var(--moav-cyan-dim); border-radius:var(--radius-sm); }
+    .mc-top{ display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:24px; font-weight:600; color:var(--moav-white); }
+    .mc-ic{ width:22px; height:22px; flex-shrink:0; color:var(--moav-cyan); }
+    .mesh-chip small{ font-size:17px; font-weight:400; color:var(--moav-text-2); letter-spacing:0.02em; }
+    .mesh-diagram{ flex:1; min-height:0; width:100%; }
+    .build-card{ border:1px solid var(--border-strong); background:var(--moav-ink-600); border-radius:var(--radius-sm); padding:14px 16px; display:flex; flex-direction:column; gap:4px; }
+    .build-name{ font-size:21px; font-weight:600; color:var(--moav-cyan); }
+    .build-desc{ font-size:18px; color:var(--moav-text-2); line-height:1.3; }
+  </style>
+
+  <!-- ============================== SLIDE 19 — MORALE ============================== -->
+  <section class="slide" data-screen-label="19 Morale" style="justify-content:center;">
+    <p class="kicker anim" style="margin-bottom:30px;">Activist morale</p>
+    <h1 class="anim d1" style="font-family:var(--font-sans); font-weight:800; font-size:88px; line-height:1.02; letter-spacing:-0.025em; margin:0; max-width:22ch;">
+      <span style="display:block; color:var(--moav-white);">You don't have to win.</span>
+      <span style="display:block; color:var(--moav-cyan);">You have to make it expensive.</span>
+    </h1>
+
+    <div class="anim d2" style="margin-top:46px; display:grid; grid-template-columns: 1.15fr 0.85fr; gap:64px; align-items:center; max-width:1640px;">
+      <svg viewBox="0 0 920 380" style="width:100%; height:auto;">
+        <!-- axes -->
+        <path d="M70,28 L70,300 L902,300" fill="none" stroke="#3a4658" stroke-width="2" data-comment-anchor="2ea3f7f934-path"/>
+        <polygon points="70,20 63,36 77,36" fill="#3a4658"/>
+        <polygon points="910,300 894,293 894,307" fill="#3a4658"/>
+        <!-- cyan rising: cost to censor you -->
+        <path d="M82,272 C320,250 520,150 866,70" fill="none" stroke="#00d4ff" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="866" cy="70" r="8" fill="#00d4ff" filter="drop-shadow(0 0 8px rgba(0,212,255,0.7))"/>
+        <!-- red falling: cost to pull the plug -->
+        <path d="M82,94 C330,120 560,238 866,288" fill="none" stroke="#ff4757" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="866" cy="288" r="8" fill="#ff4757" filter="drop-shadow(0 0 8px rgba(255,71,87,0.7))" data-comment-anchor="68978c212e-polygon"/>
+        <!-- crossover -->
+        <line x1="460" y1="184" x2="460" y2="300" stroke="rgba(255,255,255,0.16)" stroke-width="1" stroke-dasharray="3 5"/>
+        <circle cx="460" cy="184" r="7" fill="#ffffff" data-comment-anchor="4e84b9c61c-circle"/>
+        <!-- line labels, placed clear of both curves -->
+        <text x="470" y="104" fill="#00d4ff" font-family="'JetBrains Mono',monospace" font-size="20" font-weight="600">cost to censor  ↑</text>
+        <text x="470" y="278" fill="#ff4757" font-family="'JetBrains Mono',monospace" font-size="20" font-weight="600">cost to pull the plug  ↓</text>
+        <!-- axis ticks -->
+        <g fill="#5d7488" font-family="'JetBrains Mono',monospace" font-size="17">
+          <text x="96" y="326">2010</text><text x="460" y="326" text-anchor="middle">2026</text><text x="872" y="326" text-anchor="end">next</text>
+          <text x="46" y="44" text-anchor="end">cost</text><text x="828" y="362">time →</text>
+        </g>
+      </svg>
+
+      <div style="display:flex; flex-direction:column; gap:15px;">
+        <p class="mono" style="font-size:21px; letter-spacing:0.05em; text-transform:uppercase; color:var(--moav-text-3); margin:0 0 2px;">Every wall they build, someone climbs:</p>
+        <div class="lad-row"><span class="lad-move">DNS reroute</span><span class="lad-arr mono">→</span><span class="lad-cnt">DNS tunnels · DoH</span></div>
+        <div class="lad-row"><span class="lad-move">DPI fingerprinting</span><span class="lad-arr mono">→</span><span class="lad-cnt">SNI spoof · Reality</span></div>
+        <div class="lad-row"><span class="lad-move">IP blocks</span><span class="lad-arr mono">→</span><span class="lad-cnt">CDN fronting</span></div>
+        <div class="lad-row"><span class="lad-move">Total blackout</span><span class="lad-arr mono">→</span><span class="lad-cnt">sound · mesh · dial-up</span></div>
+        <p class="mono" style="font-size:24px; color:var(--moav-cyan); margin:10px 0 0;">Keep raising the price. The arms race has a direction.</p>
+      </div>
+    </div>
+    <div class="slide-num mono">19</div>
+  </section>
+  <style>
+    .lad-row{ display:grid; grid-template-columns: 1fr auto 1.15fr; align-items:center; gap:12px; }
+    .lad-move{ font-family:var(--font-mono); font-size:21px; color:var(--moav-red); text-align:right; }
+    .lad-arr{ color:var(--moav-text-3); font-size:18px; }
+    .lad-cnt{ font-family:var(--font-mono); font-size:21px; font-weight:600; color:var(--moav-cyan); }
+  </style>
+
+  <!-- ============================== SLIDE 20 — THE FRIENDS (warm) ============================== -->
+  <section class="slide warm" data-screen-label="20 The Friends" style="justify-content:center;">
+    <p class="kicker anim" style="margin-bottom:36px;">The friends</p>
+    <h1 class="title anim d1" style="font-size:74px; max-width:34ch;">The community <span style="color:#ff8c00;">is</span> the infrastructure</h1>
+
+    <div class="anim d2" style="margin-top:60px; display:flex; gap:24px; flex-wrap:wrap; max-width:1500px;">
+      <div class="friend-chip"><span class="fr-role mono">researcher</span><span class="fr-do">showed you the paper you needed to figure it out</span></div>
+      <div class="friend-chip"><span class="fr-role mono">developer</span><span class="fr-do">fixed the bug at 11pm, three timezones away</span></div>
+      <div class="friend-chip"><span class="fr-role mono">activist</span><span class="fr-do">tested it in conditions you can't replicate</span></div>
+      <div class="friend-chip"><span class="fr-role mono">translator</span><span class="fr-do">made the docs readable for the "power users"
+      </span></div>
+    </div>
+
+    <p class="body anim d3" style="margin-top:56px; font-size:30px; max-width:64ch;" data-comment-anchor="930a845dae-p">The tool could die the moment the people maintaining it burn out. In March, I almost did. <em class="hl">Take care of each other.</em></p>
+    <div class="slide-num mono">20</div>
+  </section>
+  <style>
+    .friend-chip{ display:flex; flex-direction:column; gap:12px; flex:1; min-width:280px; padding:28px 30px; border:1px solid var(--ac-line); background:var(--ac-dim); border-radius:var(--radius-lg); }
+    .fr-role{ font-size:24px; font-weight:600; letter-spacing:0.06em; color:#ff8c00; }
+    .fr-do{ font-size:24px; line-height:1.4; color:var(--moav-text-2); }
+  </style>
+
+  <!-- ============================== SLIDE 21 — MOAV: FUTURE ============================== -->
+  <section class="slide grid-tex" data-screen-label="21 MoaV — Future">
+    <p class="kicker anim">What's next · the roadmap</p>
+    <h1 class="title anim d1" style="margin-top:18px; max-width:30ch;">Where MoaV goes next</h1>
+
+    <div class="anim d2 roadmap" style="margin-top:34px; flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px; min-height:0;">
+      <div class="rm-row"><span class="rm-tag mono">client</span><div><p class="rm-h">MoaV Client</p><p class="rm-d">A cross platform app: import bundles, auto-load-balance fail-over across protocols and servers. <a href="https://github.com/MotherofallVPNs/moav-client" style="color:var(--moav-cyan); text-decoration:none;">github.com/MotherofallVPNs/moav-client</a></p></div></div>
+      <div class="rm-row"><span class="rm-tag mono">protocols</span><div><p class="rm-h">Tougher transports</p><p class="rm-d">More DPI-resistant protocols as the censor adapts. The arms race never stops.</p></div></div>
+      <div class="rm-row"><span class="rm-tag mono">dVPN</span><div><p class="rm-h">Nym &amp; Sentinel integration</p><p class="rm-d">DePIN/dVPN has its own complexities, key management, initial stake deposit, etc.</p></div></div>
+      <div class="rm-row"><span class="rm-tag mono">access</span><div><p class="rm-h">Telegram auto-config</p><p class="rm-d">A public bot that mints fresh configs on demand, so anyone gets online in seconds.</p></div></div>
+      <div class="rm-row"><span class="rm-tag mono">funding</span><div><p class="rm-h">Community-funded servers</p><p class="rm-d">Donations covering the network's VPS costs, directly and through the MahsaNet network, so it never rides on one wallet.</p></div></div>
+    </div>
+    <p class="body anim d3" style="margin-top:18px; font-size:26px;">Resilient by default. <em class="hl">Built during the crisis, with the goal to serve the people.</em></p>
+    <div class="slide-num mono">21</div>
+  </section>
+  <style>
+    .roadmap .rm-row{ display:flex; gap:24px; align-items:flex-start; padding:6px 0; }
+    .rm-tag{ flex-shrink:0; width:112px; font-size:18px; letter-spacing:0.06em; text-transform:uppercase; color:var(--moav-cyan); border:1px solid var(--moav-cyan-line); background:var(--moav-cyan-dim); border-radius:var(--radius-xs); padding:9px 0; text-align:center; }
+    .rm-h{ font-size:27px; font-weight:700; color:var(--moav-white); margin:0 0 3px; }
+    .rm-d{ font-size:23px; line-height:1.4; color:var(--moav-text-2); margin:0; }
+  </style>
+
+  <!-- ============================== SLIDE 22 — THE ASK ============================== -->
+  <section class="slide grid-tex" data-screen-label="22 The Ask">
+    <div class="anim danger-banner mono">A tool that breaks in the crisis it was built for is worse than no tool.</div>
+    <p class="kicker anim" style="margin-top:30px;">The ask · this week</p>
+    <h1 class="title anim d1" style="margin-top:20px; max-width:28ch;">Build for the people who get cut off</h1>
+
+    <div class="anim d2" style="margin-top:46px; flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:32px; min-height:0;">
+      <div class="ask-card">
+        <span class="ask-n mono">1</span>
+        <h3 class="ask-h">Deploy tonight</h3>
+        <p class="ask-d">A small VPS or a Raspberry Pi. Ten minutes. Enable Conduit, Snowflake, donate configs to MahsaNet.</p>
+        <div class="ask-cmd mono"><span class="pr">$</span> curl -fsSL moav.sh/install.sh | bash</div>
+        <p class="ask-foot">Before you sleep, someone behind the wall is breathing through your bandwidth.</p>
+      </div>
+      <div class="ask-card">
+        <span class="ask-n mono">2</span>
+        <h3 class="ask-h">Build the hard problems</h3>
+        <p class="ask-d">Not another DeFi protocol. The plumbing for the next blackout.</p>
+        <div class="ask-list mono">
+          <span>Offline payments</span><span>Mesh</span><span>Exotic routing</span><span>The last mile</span>
+        </div>
+        <p class="ask-foot">Build it now. During the crisis is too late, and the crisis is inevitable.</p>
+      </div>
+      <div class="ask-card" data-comment-anchor="6148cf1b54-div">
+        <span class="ask-n mono">3</span>
+        <h3 class="ask-h">Fund the gap</h3>
+        <p class="ask-d">Point treasuries, grants and bounties at the people, not the shareholders.</p>
+        <div class="ask-list mono">
+          <span>MahsaNet</span><span>Direct2Cell</span><span>Nedagram</span><span>MoaV</span><span>unredacted</span><span>the next crazy hackathon</span>
+        </div>
+        <p class="ask-foot">Not charity. The rent on a free internet.</p>
+      </div>
+    </div>
+    <div class="slide-num mono">22</div>
+  </section>
+  <style>
+    .danger-banner{ display:inline-block; align-self:flex-start; font-size:21px; color:var(--moav-red); background:rgba(255,71,87,0.10); border:1px solid rgba(255,71,87,0.4); border-radius:var(--radius-sm); padding:12px 20px; letter-spacing:0.02em; white-space:nowrap; }
+    .ask-card{ background:var(--moav-ink-600); border:1px solid var(--border-strong); border-radius:var(--radius-lg); padding:32px 30px; display:flex; flex-direction:column; }
+    .ask-n{ width:52px; height:52px; border-radius:var(--radius-sm); background:var(--moav-gradient-primary); color:#04121a; font-size:28px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+    .ask-h{ font-family:var(--font-sans); font-size:34px; font-weight:700; color:var(--moav-white); margin:24px 0 14px; }
+    .ask-d{ font-size:24px; line-height:1.45; color:var(--moav-text-2); margin:0; }
+    .ask-cmd{ font-size:19px; color:var(--moav-green); background:#06060a; border:1px solid var(--border-default); border-radius:var(--radius-sm); padding:16px 18px; margin:24px 0 0; word-break:break-all; }
+    .ask-cmd .pr{ color:var(--moav-green); }
+    .ask-list{ display:flex; flex-wrap:wrap; gap:10px; margin:24px 0 0; }
+    .ask-list span{ font-size:20px; padding:8px 14px; border:1px solid var(--moav-cyan-line); color:var(--moav-cyan); background:var(--moav-cyan-dim); border-radius:var(--radius-xs); white-space:nowrap; }
+    .ask-quote{ font-size:23px; line-height:1.5; color:var(--moav-text-2); margin:24px 0 0; }
+    .ask-quote .white{ color:var(--moav-white); }
+    .ask-foot{ font-size:24px; line-height:1.4; color:var(--ac); margin:auto 0 0; padding-top:18px; border-top:1px solid var(--border-default); }
+  </style>
+
+  <!-- ============================== SLIDE 23 — CLOSE ============================== -->
+  <section class="slide glow grid-tex" data-screen-label="23 Close" style="justify-content:center; align-items:flex-start;">
+    <p class="mono anim" style="font-size:26px; color:var(--moav-text-2); margin:0 0 56px; white-space:nowrap;">"Cypherpunks write code." <span style="color:var(--moav-text-3);">— 1993</span></p>
+
+    <h1 class="anim d1" style="font-family:var(--font-sans); font-weight:800; font-size:160px; line-height:0.92; letter-spacing:-0.035em; margin:0; color:var(--moav-white);">
+      <span style="display:block;">Become the</span>
+      <span style="display:block; color:var(--moav-cyan); text-shadow:0 0 40px rgba(0,212,255,0.4);">Infrastructure.</span>
+    </h1>
+
+    <div class="anim d2" style="margin-top:60px; display:flex; align-items:center; gap:34px;">
+      <img src="assets/logo.png" alt="MoaV" style="width:60px; height:60px; filter:drop-shadow(0 0 18px rgba(0,212,255,0.45));">
+      <span class="mono" style="font-size:46px; font-weight:600; color:var(--moav-white); letter-spacing:0.02em;">moav.sh</span>
+    </div>
+
+    <p class="mono anim d2" style="margin-top:30px; font-size:27px; color:var(--moav-text-2);">Shayan Eskandari · <span style="color:var(--moav-cyan);">shayan.es</span> · X <span style="color:var(--moav-cyan);">@sbetamc</span></p>
+
+    <p class="mono anim d3" style="position:absolute; left:var(--pad-x); bottom:56px; font-size:24px; color:var(--moav-text-3); margin:0;">June 2026 — the window is open · ~60% connectivity and unstable · the next blackout is inevitable!</p>
+  </section>
+
+</deck-stage>
+
+<script type="application/json" id="speaker-notes">
+[
+  "No preamble. Start talking. \"I want to tell you about the moment I realized I was building things that shouldn't exist.\" Pause — let the slide land. Hold the personal story for the rage-coding slides. Open on the hook, not the confession.",
+  "Thirty seconds on who I am — just enough to earn the next eighteen minutes. Iranian diaspora, security researcher and hacker. PhD on how blockchains actually break — front-running, oracle failures, the dark side of permissionlessness. Years auditing smart contracts at ConsenSys, then CTO of one of the first publicly-traded Ethereum staking operations. But the real thread is teaching Farsi speakers this technology since 2015, and co-founding IranUnchained to route crypto past geopolitical exclusion. That's the lens for everything that follows. Off the terminal I shoot film — that photo is a double exposure on a sixty-year-old camera. And right now, the obsession is MoaV. (Keep it tight — a credential, not a CV.)",
+  "This isn't a story about one blackout. It's a fifteen-year escalation. 2009, the Green Movement: filtering, throttling, they killed SMS. 2019, what Iranians call Bloody Aban — for about six days roughly ninety-five percent of the network went dark, around seven thousand arrested and an estimated fifteen hundred killed, mostly in that window, because during a blackout there's no one left to document it. 2022, Woman, Life, Freedom, after Mahsa Jina Amini died in custody: rolling shutdowns across eighty-plus cities, nearly nineteen thousand arrested, at least five hundred fifty-one killed. June 2025, the twelve-day war: near-total blackout, traffic down ninety-seven percent. Notice the second column the audience can read for themselves — arrests and killings climb right alongside the shutdowns. Every time it got harder, longer, more complete, because every time they studied what leaked through and closed it. That's the pattern. Hold it in your head.",
+  "This year was the worst on record. Frame it simply: on January 8th and 9th, everything went off at once — SMS, phones, landlines, internet, even the National Information Network, the government's own intranet that's supposed to survive shutdowns. That's the window the worst of the killing happened in; the toll is disputed somewhere between thirty and seventy thousand, disputed precisely because there was no one left online to count. Then came eighty-eight days of internet blackout. Phones eventually came back, but the internet did not, and even text was unreliable, until late May when it limped back at sixty percent. And here's the strange part of what leaked through: Iranian ISPs spoofed DNS and laundered Cloudflare traffic through Delta Telecom in Azerbaijan, so Iranians showed up as Azerbaijani — and for a quarter, that tiny country of ten million ranked third in the world for per-capita ChatGPT use. And there are credible reports of a planned permanent break from the global internet — Chinese shutdown hardware, pre-installed. The next blackout isn't a risk. It's inevitable. And when the network can't be reached at all, the last mile gets carried in by hand — Kolbars, the Kurdish border porters, smuggled Starlink dishes and routers over the mountains on their backs to put whole towns back online. That's not a metaphor; it's documented in a peer-reviewed CHI study we'll come back to.",
+  "And before you file this under 'Iran's problem' — it isn't. Look at the VPN-demand spikes the day access gets cut — every spike is a whole population trying to flee to a free internet. Nepal, almost three thousand percent on a social-media ban. Uganda, twenty-five hundred percent during an election blackout. The UK — the UK — nearly two thousand percent the day an age-verification law landed. Russia's regulator isn't just blocking VPNs anymore, it's DDoS-ing them. Utah and others are writing age-verification laws that name VPNs directly. Different flags, same lever: control the network, control the people. The authoritarian playbook is going mainstream, and democracies are building the same machinery. This is the global default now — which is exactly why the tools have to exist before the switch gets flipped.",
+  "Cory Doctorow's framework: enshittification, the lifecycle of platforms. They start good to attract users, then lock users in, then abuse users to serve advertisers, then abuse advertisers to serve shareholders, until the platform rots. He was describing social media — but the same arc is the whole history of the internet. Open protocols attracted us. ISPs consolidated and captured the infrastructure. CDNs became chokepoints. And now states have figured out that controlling the physical fiber is the same as controlling what people can say and know. The internet enshittified — and most of us who built 'decentralized' alternatives built them on top of the enshittified layer and pretended we hadn't.",
+  "Now apply that framework to this room. The cypherpunk manifesto promised communications privacy — remailers, signatures, electronic money, and the ability to whisper across borders without surveillance. Censorship-resistant access was the original pitch, not just censorship-resistant money. We attracted builders with that. Then VCs captured the space, and the incentives optimized for what could be priced and sold. Financial privacy has a business model; communications privacy for someone in Tehran does not. So we got yield, memecoins, token launches, and — my favorite — privacy reframed as an enterprise compliance feature. 'Privacy-as-a-Service,' SOC 2-ready confidential compute, sold to funds, never to Tehran. The chart on the slide says it without subtlety — ARR, TAM and exit curving to the moon, and a flat red line for the people who actually need it: zero. Meanwhile the people who actually need this get cut off twice: once by their own government, and again by ours, by sanctions law vague enough that builders are scared to serve Iranians at all. This isn't cypherpunk. It isn't even human.",
+  "Here's the structural problem, and I want it to be visual. We spent ten years building the top of the stack — wallets, dApps, L2s, IPFS, RPC nodes, bridges, ZK. Beautiful work. But all of it rests on a layer we don't control: the access layer, the ISPs, and underneath that, the physical last mile — the fiber, state-controlled. We optimized for trustlessness at the top and completely ignored the chokepoint at the bottom. Cut that bottom layer and everything above it vanishes — not from a technical failure, but from a failure of imagination about who the real adversary is.",
+  "Let me tell you why I built this, because it's the most honest part of the talk. I'm Iranian diaspora. For a decade I've taught Farsi speakers this technology — wallets, self-custody, the whole stack. When the blackout came, all of it was worthless. I couldn't reach my own family. My messages weren't getting blocked — they just weren't being delivered. Nothing on the other end. I sat in Lisbon, helpless. So I rage coded. Not for a better financial future — for a better now, for anyone who needed it. No real hope it would work. And then it did — people got through. Then March came, the full shutdown, and everything I'd built stopped mattering. I was fully defeated. I closed the laptop and walked away for days. And then I came back, because that's the job. I kept fixing bugs, kept adding protocols. And in May, at sixty percent, it worked again. That arc — February it worked, March I broke, May it worked again — is the macro timeline, lived personally. You come back. That's the job. (Don't rush this.)",
+  "So what is it? The design philosophy isn't elegance — it's redundancy. One command, a five-dollar VPS, ten minutes, and you have a server running sixteen-plus circumvention protocols at once on a single port: Reality, Shadowsocks, Hysteria2, WireGuard, Trojan, XHTTP, four DNS tunnels, GooseRelay. Not pick the best one — every one. Because you don't know which survives the next blackout. The censor has to block every protocol; you only need one to get through. And that's the real point: it's one command, so a stranger with a spare VPS becomes infrastructure. That's MoaV — Mother of All VPNs. The name is a joke that's also the thesis. And it's built to be shared, not hoarded — in the protests a single node routinely served a household, a classroom, a whole neighborhood, and one seller pushed working configs to hundreds of thousands. One admin becomes infrastructure for a crowd.",
+  "This is the part nobody outside Iran sees. During a shutdown, people inside run scanners looking for any IP range that's still reachable — and sometimes a whole cloud region stays open almost by accident, say an Azure range in North Africa. Now you've got two brutal problems. One: actually get a server with an IP inside that open range before it's noticed and closed. Two: the crack only stays open a few days, so the second you have it, traffic has to be flowing — there's no time to hand-configure sixteen protocols. That's the whole reason MoaV is one command: it stands up the entire stack and hands even a non-technical person a config bundle that imports into every VPN client, so they're online in minutes, not days. The design is a race against that closing window.",
+  "Here's what that one command actually builds. One small box, sixteen-plus protocols sharing a handful of ports, all of it stealth-first — it looks like ordinary HTTPS, DNS, or a video call. Your clients import one bundle into whatever app they already have — Hiddify, v2rayNG, NekoBox, sing-box, WireGuard, or just scan a QR. Stealth proxies for everyday use, full VPN, specialty transports, and the DNS floor on port 53 for when everything else is gone; Cloudflare's CDN is the side door when your raw IP gets blocked. And the part I love most: the same box gives back — Conduit relays for Psiphon's millions, Snowflake bridges Tor, MahsaNet donates configs. Run MoaV and you're not just getting yourself out, you're carrying strangers out too.",
+  "Quick reality check, because 'sixteen protocols' can sound like slideware. This is what it actually looks like. One command gives you that interactive TUI on the left. Then an admin dashboard — add or revoke users, hand out config bundles, watch live traffic, toggle the give-back donations — and Grafana, per-protocol throughput and GeoIP: who's connecting, from where, in real time. The whole focus is UX, for the operator and the end user alike — config bundles are generated so even your grandma can get online on her phone. Deliberately boring: a non-technical person runs the installer, hands out QR codes, and it just runs. [If asked / removed from slide: there's also a one-line CLI that starts and stops every service individually.] (Ten, fifteen seconds here — it's proof, not a product demo.)",
+  "Now the arms race, and this is the mad scientist shit I love. Step one: they fingerprint the obvious — OpenVPN, plain WireGuard, vanilla proxies — and block them one by one. So step two, you stop looking like a VPN and start looking like infrastructure they can't kill. SNI Spoofing sends a decoy ClientHello — the DPI box sees microsoft.com while the real connection runs underneath. GooseRelay exits through Google Apps Script; blocking it means blocking Google Workspace for the whole country. BaleVPN is my favorite: Iran has its own state-approved chat app, Bale, and BaleVPN rides Bale's real WebRTC video-call media — the exact same trick as Protozoa, the academic system used to tunnel through video calls in China and Russia. They built the wire; we use it. And DNS is the floor — four tunnels on one port; kill DNS and you break your own country. Every block just teaches us a new place to hide. And it's not just one clever app — citizens did the same with SHAD, the regime's own school platform, smuggling configs through the state's own infrastructure. Here's the pattern underneath all of it: what stays up during a blackout is what the regime needs to function — DNS, Google, banking, its own apps — and that's exactly the surface we hide in. Use the wire they can't switch off.",
+  "Now the frontier — and I'll be honest about what works versus what's a proof of concept, because overselling this gets people hurt. Notice who built the things that work: people on the inside, living the blackout, trying to get out. GitHub as a covert channel — data in git objects and CI artifacts, too big to block. Google Apps Script relays — real, but the accounts may not survive. TCP over WhatsApp — real today, ban risk. thefeed reads Telegram channels over DNS in DNS-only blackouts. Javid's steganography hides configs in images that survive recompression. Then the right column — your move: power-line networking that shares one link across a building today, and could push past the transformer to a whole block; dial-up revived — a modem to a foreign ISP, exactly how France's FDN and Telecomix kept Egyptians online in 2011, because phone lines outlive IP, though modern VoIP transcoding fights the tones; Starlink-bridged neighborhood mesh; a higher-bandwidth audio gap with payment rails. The tools that work were built by people living it. The rest is waiting on the room with the engineers and the money. That's you. And here's the real finding: the people who need this haven't stayed users — they've become builders. There's now peer-reviewed CHI research, Qalandar and colleagues, that calls this grassroots infrastructuring: end-user development as survival work. The proof the model works is that the people living the blackout already build it; your job is to lower the barrier.",
+  "And here's the one I'm proudest of — the case where even DNS is gone. Total shutdown. But voice calls often still work, because killing the phone system is a harder political decision than killing the internet. So: Nedagram. Neda is Persian for 'voice.' It turns text into sound and back into text. You type a VPN config into a web page — fully offline, a PWA — and it encodes it as MFSK audio, four tones between eight hundred and twenty-three hundred hertz, a little song. You hold your phone to the speaker, call Tehran, and the same page on the other end decodes it. About twenty bits per second over a noisy call. Absurd — but to survive that noise it uses concatenated forward error correction: Reed–Solomon outside, soft-decision Viterbi inside. That's the exact class of coding NASA flew on Voyager, from beyond the solar system. Deep-space error correction, pushing a VPN config through a crackly phone call. About twenty bits per second, but it works. You can see it right here on the slide: the send screen on the left turning a config into sound, the chart in the middle, and the receive screen on the right with the exact config decoded back, even rendered as a QR to import. nedagram.com, open source, and an npm package. (Let the Voyager line land.)",  "Here's a problem I want to hand to this room as homework, because it's embarrassing it's unsolved. A signed transaction is just data — a blob of bytes. You can sign it air-gapped, carry it over any channel — Nedagram, WhatsApp, git, SMS — and broadcast it from any online node. That's the whole shape of the solution. So where does it stand? Bitcoin's PSBT does clean air-gapped signing — it works. Cashu is the closest full system, but Bitcoin-only and the mint must be online. Stablecoins offline? Unsolved, no product. And the truly embarrassing part: most EVM wallets can't even build a transaction offline. They need the live nonce and gas price from the network, so the second you're cut off you're holding keys to money you literally cannot move. Before you call this absurd: a war-time power or internet outage can last days, and then this is the only way money moves. The realistic target is small value — cap the amount, cap the loss. The wall is real: without a connected ledger, stopping double-spend needs hardware trust or a relay you trust to broadcast within minutes; Visa and CBDC pilots solve it with secure elements. Two asks: export-and-relay, and ZK proofs plus escrow for safe small-value offline payments. Go build it.",
+  "We run popup cities — Zuzalu, the network-state camps, hackathons everywhere. And what do we run them on? Discord. Centralized chat on the open internet. Why? The camp could run on DeltaChat, Matrix on a local homeserver, Jitsi for video, bitchat over Bluetooth, Nedagram for the audio gap, Meshtastic over LoRa — the exact stack we keep telling people in Tehran to use. So let's eat our own infrastructure and dogfood the hard parts at the next popup: a local testnet that lives on the LAN, a local payment network that settles coffee with the internet cut, traffic that hops mesh-to-mesh with a few shared exit routes for the whole camp, and let's finally de-hobbyist-ify LoRa. We have the engineers and the money in this room. The next Zuzalu should run on the stack we're asking others to trust their lives to.",
+  "People ask how I stay motivated fighting adversaries with intelligence agencies and physical control of fiber. Here's the honest frame. Every protocol we add makes surgical censorship more expensive — that's the line going up. But they have an escape hatch, and it's getting cheaper: the total blackout, the pre-installed kill switch, the blunt instrument. So our job is twofold. Make fingerprinting so expensive they're forced to the kill switch — and then meet them past the plug, with sound and mesh and the last mile. You don't have to win. You have to make it expensive — keep raising the price on every move they've got. And the history is a ladder: they rerouted DNS, so people wrote DNS tunnels; they inspected SNI, so we spoofed it; they blocked IP ranges, so we fronted through CDNs; they pull the plug entirely, so we answer with sound and mesh. Every wall, a tool that climbs it. Every block costs them, every blackout costs them more. The arms race has a direction, and it's ours if we keep building.",
+  "I want to talk about the friends. MoaV exists because of a researcher who pointed me at the paper I needed, a developer six timezones away who fixed a critical bug over a weekend, an activist testing in conditions I can't replicate from Lisbon, a translator who made the docs readable. None of them are on the contributors list the way they should be — that's a failure of how we measure these things. The community is not a side effect of the infrastructure. It is the infrastructure. The tool dies the moment the people maintaining it burn out — I know, because in March I almost did. Take care of each other. The friends are the most non-replicable part of what we're building.",
+  "Before the ask, thirty seconds on where this goes — because I'm not asking you to fund a dead end. A native MoaV client, so there's no config wrangling at all: import once, it auto-falls-back across protocols. Tougher transports as the censor adapts. Integration with decentralized VPNs, Nym and Sentinel, so the exit layer isn't any single operator. A public Telegram bot that mints fresh configs on demand, so anyone gets online in seconds. And community funding that covers the server costs, so the network never rides on one person's wallet. Resilient by default, built before the crisis, funded by the people it serves.",
+  "So here's the ask, and one frame first: a tool that breaks in the crisis it was built for is worse than no tool, because someone trusted it. Build for the people who get cut off. Three things, this week, not a roadmap. One: deploy tonight. A small VPS or even a Raspberry Pi, ten minutes — run this, enable Conduit for Psiphon's tens of millions, enable Snowflake. Before you go to sleep, someone behind the wall is breathing through your bandwidth. Two: build the hard problems — not another DeFi protocol, the plumbing for the next blackout. Offline payments, mesh, exotic routing, the last mile. And build it now, because during the crisis is too late, and the crisis is inevitable. Three: fund the gap, and I mean concretely — point treasuries, grants and bounties at the people, not the shareholders, and pay the VPS bills that keep this network breathing. It's not charity. It's the rent on a free internet. If we actually believe the internet should be beyond state control, paying it isn't optional. It's the thing.",
+  "The cypherpunk manifesto ends with a declaration: cypherpunks write code. They wrote code to protect privacy, and it became Tor, Signal, the foundation of circumvention in dozens of countries. We inherited that. Iran is at sixty percent and unstable, nobody knows how long the window stays open, and the next blackout — planned harder, with everything they learned — is already in preparation. The servers that will matter are the ones being deployed right now. Not during the crisis. Now. I came from Lisbon to tell you the mad scientist shit is what matters — the rage coding at 2am, the DNS tunnel through the government's own infrastructure, a VPN config sung through a phone call with the same error correction NASA flew past Pluto. Build that. Be that. moav.sh. (Stop — no trailing thanks. My site and handle are on the slide — shayan.es, X @sbetamc — gesture at them, don't read them out. Let the URL sit on the screen.)"
+]
+</script>
+
+<script>
+  /* Inject a faint "moav.sh" handle into every slide. Runs before deck-stage.js
+     moves the slides, so the handle travels with them (and into the PDF). */
+  (function(){
+    document.querySelectorAll('deck-stage > section.slide').forEach(function(s){
+      if (s.querySelector('.deck-foot')) return;
+      var f = document.createElement('div');
+      f.className = 'deck-foot';
+      f.textContent = 'moav.sh';
+      s.appendChild(f);
+    });
+  })();
+</script>
+<script src="deck-stage.js"></script>
+
+<!-- Tweaks/editor panel removed for the p2present display demo (was authoring-only: React + in-browser Babel). The deck's default "feel" is baked into the <html> class above. -->
+</body>
+</html>

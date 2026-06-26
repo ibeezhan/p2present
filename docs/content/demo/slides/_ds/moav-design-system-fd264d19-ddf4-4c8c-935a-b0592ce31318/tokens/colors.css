@@ -1,0 +1,138 @@
+/* =============================================================================
+   MoaV — Color Tokens
+   Two coherent dark, cypherpunk palettes:
+     1. BRAND / neon       — marketing surfaces (moav.sh). Cyan→purple on near-black.
+     2. OPS / terminal     — product dashboards (admin + client). GitHub-dark, semantic.
+   Sourced verbatim from shayanb/MoaV site/style.css + admin/templates/dashboard.html
+   and MotherofallVPNs/moav-client web-ui/src/theme.ts.
+   ============================================================================= */
+
+:root {
+    /* ---------------------------------------------------------------------------
+       BRAND — base ink & surfaces (marketing / neon)
+       Near-black navy, layered upward toward cards.
+       --------------------------------------------------------------------------- */
+    --moav-ink-900: #0a0a0f;   /* page background, deepest */
+    --moav-ink-800: #0e0e16;   /* between page + secondary */
+    --moav-ink-700: #12121a;   /* secondary surface */
+    --moav-ink-600: #15151f;   /* card surface */
+    --moav-ink-500: #1a1a25;   /* tertiary / raised surface */
+    --moav-ink-400: #1a1a2e;   /* radial glow seed (top of gradient) */
+
+    /* BRAND — text on ink */
+    --moav-white:        #ffffff;
+    --moav-text-2:       #a0a0b0;   /* secondary text */
+    --moav-text-3:       #606070;   /* muted text */
+
+    /* ---------------------------------------------------------------------------
+       BRAND — neon accents
+       Cyan is the hero. Purple is the partner. Green = live/success, the others
+       are signals borrowed by the terminal dots (red/yellow).
+       --------------------------------------------------------------------------- */
+    --moav-cyan:         #00d4ff;
+    --moav-cyan-bright:  #22e0ff;
+    --moav-purple:       #7b5cff;
+    --moav-purple-lift:  #8b6aff;   /* hover lift */
+    --moav-green:        #00ff88;   /* neon "alive" green (marketing) */
+    --moav-yellow:       #ffd000;
+    --moav-red:          #ff4757;
+
+    /* Neon tints (10% washes used for chips, icon plates, glows) */
+    --moav-cyan-dim:     rgba(0, 212, 255, 0.10);
+    --moav-cyan-line:    rgba(0, 212, 255, 0.30);
+    --moav-purple-dim:   rgba(123, 92, 255, 0.10);
+    --moav-purple-line:  rgba(123, 92, 255, 0.40);
+
+    /* Hairlines on dark (white at low alpha — the workhorse border) */
+    --moav-line-1:       rgba(255, 255, 255, 0.05);   /* default card edge */
+    --moav-line-2:       rgba(255, 255, 255, 0.10);   /* raised / input edge */
+    --moav-line-3:       rgba(255, 255, 255, 0.20);   /* interactive edge */
+
+    /* ---------------------------------------------------------------------------
+       Signature gradients
+       --------------------------------------------------------------------------- */
+    --moav-gradient-primary: linear-gradient(135deg, var(--moav-cyan), var(--moav-purple));
+    --moav-gradient-ice:     linear-gradient(160deg, #00e5d0 0%, var(--moav-cyan) 45%, #2a7bff 100%); /* logo gradient */
+    --moav-gradient-bg:      radial-gradient(ellipse at top, var(--moav-ink-400) 0%, var(--moav-ink-900) 50%);
+
+    /* ---------------------------------------------------------------------------
+       Glows (neon bloom — used sparingly on hero art + primary CTAs)
+       --------------------------------------------------------------------------- */
+    --moav-glow-cyan:    0 0 20px rgba(0, 212, 255, 0.30);
+    --moav-glow-cyan-lg: 0 0 30px rgba(0, 212, 255, 0.50);
+    --moav-glow-purple:  0 0 20px rgba(123, 92, 255, 0.30);
+
+    /* =============================================================================
+       OPS / TERMINAL palette — the product dashboards.
+       GitHub-dark lineage: cooler, more saturated surfaces, semantic signal colors.
+       ============================================================================= */
+    --ops-bg:        #0a0e17;
+    --ops-surface:   #111827;
+    --ops-surface-2: #1a2233;
+    --ops-border:    #1e2d3d;
+    --ops-text:      #c9d1d9;
+    --ops-text-dim:  #6e7681;
+
+    --ops-green:      #3fb950;
+    --ops-green-dim:  rgba(63, 185, 80, 0.15);
+    --ops-blue:       #58a6ff;
+    --ops-blue-dim:   rgba(88, 166, 255, 0.10);
+    --ops-red:        #f85149;
+    --ops-red-dim:    rgba(248, 81, 73, 0.15);
+    --ops-yellow:     #d29922;
+    --ops-yellow-dim: rgba(210, 153, 34, 0.15);
+    --ops-orange:     #db6d28;
+    --ops-orange-dim: rgba(219, 109, 40, 0.15);
+
+    /* =============================================================================
+       SEMANTIC ALIASES — design against these, not raw values.
+       Default theme = BRAND/neon. Scope `.theme-ops` flips to the terminal palette.
+       ============================================================================= */
+    --surface-page:    var(--moav-ink-900);
+    --surface-sunken:  var(--moav-ink-700);
+    --surface-card:    var(--moav-ink-600);
+    --surface-raised:  var(--moav-ink-500);
+
+    --text-strong:     var(--moav-white);
+    --text-body:       var(--moav-text-2);
+    --text-muted:      var(--moav-text-3);
+
+    --accent:          var(--moav-cyan);
+    --accent-2:        var(--moav-purple);
+    --border-default:  var(--moav-line-1);
+    --border-strong:   var(--moav-line-2);
+    --border-active:   var(--moav-line-3);
+
+    --signal-success:  var(--moav-green);
+    --signal-info:     var(--moav-cyan);
+    --signal-warn:     var(--moav-yellow);
+    --signal-danger:   var(--moav-red);
+
+    --focus-ring:      var(--moav-cyan);
+}
+
+/* Terminal / product theme: opt-in scope. Re-points the semantic aliases at the
+   ops palette so the same components render as the dashboard. */
+.theme-ops {
+    --surface-page:    var(--ops-bg);
+    --surface-sunken:  var(--ops-bg);
+    --surface-card:    var(--ops-surface);
+    --surface-raised:  var(--ops-surface-2);
+
+    --text-strong:     var(--ops-text);
+    --text-body:       var(--ops-text);
+    --text-muted:      var(--ops-text-dim);
+
+    --accent:          var(--ops-green);
+    --accent-2:        var(--ops-blue);
+    --border-default:  var(--ops-border);
+    --border-strong:   var(--ops-border);
+    --border-active:   var(--ops-text-dim);
+
+    --signal-success:  var(--ops-green);
+    --signal-info:     var(--ops-blue);
+    --signal-warn:     var(--ops-yellow);
+    --signal-danger:   var(--ops-red);
+
+    --focus-ring:      var(--ops-blue);
+}

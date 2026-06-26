@@ -1,0 +1,8 @@
+/* =============================================================================
+   MoaV — Webfonts
+   The brand's real fonts: Inter (UI/prose) + JetBrains Mono (technical).
+   Loaded from Google Fonts CDN. To fully self-host, drop the .woff2 binaries
+   into assets/fonts/ and replace the @import with local @font-face rules.
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
