@@ -39,5 +39,5 @@ canvas memory) → a previously-rendered page shows blank/black when navigated b
 - [x] commit + push each logical step
 
 ## DONE
-- [ ] write `.phase5.done`
-- [ ] one telegram with summary + live URL
+- [x] write `.phase5.done`
+- [x] one telegram with summary + live URL
