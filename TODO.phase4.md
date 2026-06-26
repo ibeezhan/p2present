@@ -30,11 +30,13 @@ Resumable checklist. Commit + push each step.
 - [x] Share button → popover: "Copy presentation link" / "Copy link to this moment"
 - [x] copies to clipboard with confirmation; closes on outside-click/Esc/copy
 
-## Docs
-- [ ] README/SPEC/AUTHORING/schema: embed deck, subtitle full-window, share menu, layout glyphs
+## Docs ✅
+- [x] README/SPEC/AUTHORING/schema: embed deck, subtitle full-window, share menu, layout glyphs
 
-## Verify
-- [ ] unit + headless smoke 390/780/1280, 0 real console errors, assets 200
+## Verify ✅
+- [x] unit 21/21 + smoke 60/60 green (PDF regression, layout icons, subtitles, builder, share, deep-links)
+- [x] final full smoke at 390/780/1280, 0 real console errors, assets 200
 
 ## Done
+- [x] all implemented + verified + committed + pushed
 - [ ] .phase4.done + telegram
