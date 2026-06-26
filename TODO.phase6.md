@@ -13,8 +13,13 @@ ROADMAP.md documenting the hosting/registry plan, linked from README + home.
 - [x] `ROADMAP.md` at repo root (v1 → v3) linked from README + home
 - [x] Update README links (player → `/app`, add ROADMAP)
 - [x] Update `scripts/smoke.mjs`: player routes → `/app`; add home-page section
-- [ ] Verify: `npm test` + `npm run smoke` (390/780/1280, 0 real console errors, assets 200)
-- [ ] Commit + push each logical step; write `.phase6.done`; telegram summary+URL
+- [x] Verify: `npm test` (25/25) + `npm run smoke` (82/82) — 390/780/1280, 0 real console errors, assets 200
+- [x] Commit + push each logical step; write `.phase6.done`; telegram summary+URL
+
+## Done
+Phase 6 complete. Home is the default route; player at `/app/` (also `?demo`,
+plus legacy root player links redirect). ROADMAP.md added + linked. 25/25 unit +
+82/82 smoke green.
 
 ## Notes
 - Home: default route `/`. Player: `/app/`. Hero CTA deep-links `app/?p=moav-pdf`.
