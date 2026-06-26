@@ -398,8 +398,30 @@ async function main() {
         () => /\b13 \//.test(document.querySelector('.p2-slidecount')?.textContent || ''),
         { timeout: 15000 }).then(() => true).catch(() => false);
       ok('deeplink: #t=575&slide=13 opens at slide 13', atSlide);
-      // The "this spot" share button is present + enabled.
-      ok('deeplink: "this spot" share button present', await p.$('#share-spot-btn'));
+
+      // --- Share menu (YouTube-style popover): two clear options, copies links ---
+      // Grant clipboard + spy on writeText so we can assert WHAT gets copied.
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN }).catch(() => {});
+      await p.evaluate(() => { window.__copied = []; const o = navigator.clipboard.writeText.bind(navigator.clipboard); navigator.clipboard.writeText = (t) => { window.__copied.push(t); return o(t); }; });
+      ok('share: standalone "this spot" button removed', !(await p.$('#share-spot-btn')));
+      await p.click('#share-btn');
+      const menuOpen = await p.evaluate(() => !document.getElementById('share-menu').hidden && document.getElementById('share-btn').getAttribute('aria-expanded') === 'true');
+      ok('share: button opens a popover menu', menuOpen);
+      const items = await p.evaluate(() => [...document.querySelectorAll('.p2-share-item')].map((b) => b.textContent.trim()));
+      ok('share: menu offers presentation link + this-moment', items.length === 2 && /presentation/i.test(items[0]) && /moment/i.test(items[1]), items.join(' | '));
+      // "Copy link to this moment" → a #t=…&slide=… deep-link.
+      await p.click('#share-moment');
+      await p.waitForTimeout(150);
+      const moment = await p.evaluate(() => window.__copied.at(-1) || '');
+      ok('share: "this moment" copies a #t=&slide= deep-link', /#t=\d+&slide=\d+/.test(moment), moment.slice(-40));
+      const closed = await p.evaluate(() => document.getElementById('share-menu').hidden);
+      ok('share: menu closes after copying', closed);
+      // "Copy presentation link" → a ?src= link with no deep-link hash.
+      await p.click('#share-btn');
+      await p.click('#share-whole');
+      await p.waitForTimeout(150);
+      const whole = await p.evaluate(() => window.__copied.at(-1) || '');
+      ok('share: "presentation link" copies a hash-free ?src= link', /[?&]src=/.test(whole) && !/#t=/.test(whole), whole.slice(0, 40));
       await p.close();
     }
 

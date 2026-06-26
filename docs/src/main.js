@@ -26,7 +26,9 @@ const $title = document.getElementById('deck-title');
 const $header = document.querySelector('.p2-header');
 const $sourceToggle = document.getElementById('source-toggle');
 const $share = document.getElementById('share-btn');
-const $shareSpot = document.getElementById('share-spot-btn');
+const $shareMenu = document.getElementById('share-menu');
+const $shareWhole = document.getElementById('share-whole');
+const $shareMoment = document.getElementById('share-moment');
 
 /** Parse a deep-link hash like "#t=125&slide=7" → {t, slide} (or null). */
 function parseDeepLink() {
@@ -97,7 +99,6 @@ async function run({ source, share, display }) {
     if (deep) { try { player.applyDeepLink(deep); } catch (e) { console.warn(e); } }
     setStatus('');
     if ($share) $share.disabled = false;
-    if ($shareSpot) $shareSpot.disabled = false;
   } catch (err) {
     console.error(err);
     setStatus(err.message || String(err), true);
@@ -134,15 +135,36 @@ async function copyShareLink(withSpot) {
   const link = url.href;
   try {
     await navigator.clipboard.writeText(link);
-    setStatus(withSpot ? 'Link to this spot copied to clipboard.' : 'Share link copied to clipboard.');
+    setStatus(withSpot ? 'Link to this moment copied to clipboard.' : 'Presentation link copied to clipboard.');
   } catch {
     // Clipboard blocked (insecure context / permissions) — surface the link.
     setStatus('Share link: ' + link);
   }
   history.replaceState(null, '', link);
 }
-if ($share) $share.addEventListener('click', () => copyShareLink(false));
-if ($shareSpot) $shareSpot.addEventListener('click', () => copyShareLink(true));
+
+// Share is a small popover (YouTube-style): "copy presentation link" vs "copy
+// link to this moment" (the current #t=…&slide=… deep-link).
+function openShareMenu(open) {
+  if (!$shareMenu || !$share) return;
+  $shareMenu.hidden = !open;
+  $share.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+if ($share) {
+  $share.addEventListener('click', (e) => {
+    e.preventDefault();
+    if ($share.disabled) return;
+    openShareMenu($shareMenu.hidden);
+  });
+}
+if ($shareWhole) $shareWhole.addEventListener('click', () => { copyShareLink(false); openShareMenu(false); });
+if ($shareMoment) $shareMoment.addEventListener('click', () => { copyShareLink(true); openShareMenu(false); });
+// Close the popover on outside click or Escape.
+document.addEventListener('click', (e) => {
+  if (!$shareMenu || $shareMenu.hidden) return;
+  if (!e.target.closest('.p2-share-wrap')) openShareMenu(false);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') openShareMenu(false); });
 
 // Mobile: the source bar is collapsed by default behind a small disclosure
 // button so the player gets the vertical room. Tapping it reveals the form.
@@ -164,7 +186,6 @@ $sourceToggle.addEventListener('click', () => {
 
 // Boot.
 if ($share) $share.disabled = true;
-if ($shareSpot) $shareSpot.disabled = true;
 run(parseBootSource());
 
 function escapeHtml(s) {

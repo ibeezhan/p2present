@@ -35,8 +35,22 @@
         aria-label="Presentation source URL, IPFS CID, or magnet link"
       />
       <button type="submit" class="p2-load">Load</button>
-      <button type="button" class="p2-load p2-share" id="share-btn" title="Copy a shareable link to this presentation" aria-label="Copy a shareable link">🔗 Share</button>
-      <button type="button" class="p2-load p2-share" id="share-spot-btn" title="Copy a link that opens at the current time + slide" aria-label="Copy a link to the current spot">📍 This spot</button>
+      <div class="p2-share-wrap">
+        <button
+          type="button"
+          class="p2-load p2-share"
+          id="share-btn"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="share-menu"
+          title="Share this presentation"
+          aria-label="Share this presentation"
+        >🔗 Share</button>
+        <div class="p2-share-menu" id="share-menu" role="menu" hidden>
+          <button type="button" class="p2-share-item" id="share-whole" role="menuitem">🔗 Copy presentation link</button>
+          <button type="button" class="p2-share-item" id="share-moment" role="menuitem">📍 Copy link to this moment</button>
+        </div>
+      </div>
     </form>
   </header>
 

@@ -19,10 +19,11 @@ Resumable checklist. Commit + push each step.
 - [x] Full-window overlay on stage, bottom-center, all modes incl fullscreen; persisted toggle
 - [x] default 'window'; docs pending in Docs step
 
-## 4. Builder: deck source selection
-- [ ] deck.type: html / pdf / embed
-- [ ] deck.sources[] rows with protocol (https/ipfs/webtorrent) like video
-- [ ] minimal embed deck adapter (iframe) + SPEC/schema/docs
+## 4. Builder: deck source selection ✅
+- [x] deck.type: html / pdf / embed (dropdown)
+- [x] deck.sources[] rows with protocol dropdown (https/ipfs/webtorrent)
+- [x] minimal embed deck adapter (iframe, display-only + opt-in deep-link) + schema
+- [x] docs pending in Docs step
 
 ## 5. Share UX (YouTube-style)
 - [ ] Remove standalone "This spot" button
