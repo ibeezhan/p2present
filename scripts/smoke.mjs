@@ -219,9 +219,14 @@ async function main() {
       ok('home: hero renders the brand name', /p2present/i.test(await p.textContent('.brand')));
       const h1 = await p.textContent('.hero h1');
       const tagline = await p.textContent('.hero .tagline');
-      ok('home: one-liner present', /play themselves/i.test(h1) && /peer-to-peer/i.test(tagline), `${h1.trim()} | ${tagline.trim()}`);
+      ok('home: one-liner present', /play themselves/i.test(h1) && /sync/i.test(tagline) && /scrub/i.test(tagline), `${h1.trim()} | ${tagline.replace(/\s+/g, ' ').trim()}`);
+      // the near-wordless 3-beat replaces the old deck+JSON+link explainer
+      ok('home: bring→sync→share beats present', (await p.$$('.hero .beats .beat')).length === 3);
       const cta = await p.getAttribute('.hero .btn-primary', 'href');
       ok('home: CTA deep-links into the player demo', /^app\/\?p=moav-pdf$/.test(cta || ''), String(cta));
+      // landing page must never surface manifest/JSON/git mechanics (those live in /docs)
+      const bodyText = (await p.textContent('main')) || '';
+      ok('home: no JSON/manifest/git mechanics surfaced', !/\bJSON\b|\bmanifest\b|git clone|npm run/i.test(bodyText), bodyText.match(/\bJSON\b|\bmanifest\b|git clone|npm run/i)?.[0] || 'clean');
 
       // --- the scroll-morph centerpiece ---
       ok('home: scroll-morph mock present', await p.$('.morph[data-step]'));
@@ -230,9 +235,11 @@ async function main() {
       // (Smooth-scroll lags a single jump, so step through and collect states.)
       const stepStart = await p.getAttribute('.morph', 'data-step');
       const seen = new Set([stepStart]);
-      for (let f = 0; f <= 1.0001; f += 0.1) {
+      // Sample finely — smooth-scroll trails large jumps, so step in small
+      // increments (and let it settle) to pass through every layout band.
+      for (let f = 0; f <= 1.0001; f += 0.05) {
         await p.evaluate((frac) => { const s = document.getElementById('showcase'); window.scrollTo(0, s.offsetTop + (s.offsetHeight - window.innerHeight) * frac); }, f);
-        await p.waitForTimeout(120);
+        await p.waitForTimeout(160);
         seen.add(await p.getAttribute('.morph', 'data-step'));
       }
       // overshoot past the pin end and let smooth-scroll settle so the final mode (PiP) registers
@@ -243,8 +250,17 @@ async function main() {
       await p.evaluate(() => window.scrollTo(0, 0));
       await p.waitForTimeout(200);
 
-      // --- any-source + kept-alive teaser ---
-      ok('home: any-source section lists 4 sources', (await p.$$('#sources .source')).length === 4, String((await p.$$('#sources .source')).length));
+      // --- the source constellation (climax of the morph journey) ---
+      ok('home: source constellation lists 5 source nodes', (await p.$$('#sources .src-node')).length === 5, String((await p.$$('#sources .src-node')).length));
+      ok('home: source streams + nodes are SVG/graphic, not a card grid', await p.$('#sources .streams path'));
+      // scrolling to the end of the showcase ignites the source-streaming phase
+      await p.evaluate(() => { const s = document.getElementById('showcase'); window.scrollTo(0, s.offsetTop + s.offsetHeight); });
+      await p.waitForTimeout(600);
+      ok('home: morph journey flows into the source-streaming climax', await p.evaluate(() => document.querySelector('.showcase-sticky')?.classList.contains('sourcing') === true));
+      await p.evaluate(() => window.scrollTo(0, 0));
+      await p.waitForTimeout(200);
+
+      // --- kept-alive teaser ---
       ok('home: kept-alive teaser links the ROADMAP', (await p.$$('#alive a[href*="ROADMAP.md"]')).length >= 1);
       ok('home: roadmap framing (coming / roadmap pills)', await p.evaluate(() => {
         const t = [...document.querySelectorAll('#alive .pill .t')].map((e) => e.textContent.trim().toLowerCase());
