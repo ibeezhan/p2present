@@ -41,6 +41,6 @@ Living checklist for the phase-3 overnight job. Status legend: ⬜ todo · 🔄 
 - ✅ No stale refs (no v0), all links work, examples valid
 
 ## Verify / finish
-- ⬜ `npm test` (unit) + `npm run smoke` (headless 390/780/1280) green, 0 real console errors
-- ⬜ Commit in logical chunks, push to main after each step
-- ⬜ Write `.phase3.done` + send telegram
+- ✅ `npm test` (unit) + `npm run smoke` (headless 390/780/1280) green, 0 real console errors
+- ✅ Commit in logical chunks, push to main after each step
+- ✅ Write `.phase3.done` + send telegram
