@@ -370,6 +370,25 @@ async function main() {
       await p.close();
     }
 
+    // === 5b. Embed deck adapter (external slide URL in an <iframe>) ===
+    {
+      const p = await newPage(context);
+      // A local HTML page stands in for an external embed (Google Slides etc.).
+      const embed = {
+        p2present: '1.0', title: 'Embed Deck',
+        video: { sources: [{ provider: 'mp4', src: `${ORIGIN}/content/demo/slides/assets/nedagram-demo.mp4` }] },
+        deck: { type: 'embed', sources: [{ src: `${ORIGIN}/content/demo/slides/index.html` }], slideCount: 7, embed: { nav: 'hash', param: 'slide' } },
+        timing: [{ time: 0, slide: 1 }, { time: 2, slide: 2 }],
+      };
+      await p.goto(`${ORIGIN}/?src=${encodeURIComponent(b64(JSON.stringify(embed)))}`, { waitUntil: 'load' });
+      const frame = await p.waitForSelector('.p2-embed-frame', { timeout: 20000 }).then(() => true).catch(() => false);
+      ok('embed deck: external slides render in an <iframe>', frame);
+      const sc = await p.evaluate(() => document.querySelector('.p2-slidecount')?.textContent || '');
+      ok('embed deck: slide count comes from the manifest', /\/\s*7/.test(sc), sc);
+      ok('embed deck: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
+      await p.close();
+    }
+
     // === 6. Deep-link hash opens the player at the right time/slide ===
     {
       const p = await newPage(context);
@@ -403,6 +422,30 @@ async function main() {
         catch { return false; }
       });
       ok('builder: exports a structured manifest (video+deck+timing)', exported);
+      // Deck source selection: protocol dropdown (like video) + embed deck type.
+      const deckRow = await p.evaluate(() => {
+        const row = document.querySelector('#list-deck .p2-row');
+        const sel = row?.querySelector('select');
+        return { hasProto: !!sel, opts: [...(sel?.options || [])].map((o) => o.value) };
+      });
+      ok('builder: deck rows have a protocol dropdown (https/ipfs/webtorrent)',
+        deckRow.hasProto && ['https', 'ipfs', 'webtorrent'].every((x) => deckRow.opts.includes(x)), deckRow.opts.join(','));
+      const deckTypeOpts = await p.evaluate(() => [...document.getElementById('f-deck-type').options].map((o) => o.value));
+      ok('builder: deck type offers html/pdf/embed', ['html', 'pdf', 'embed'].every((x) => deckTypeOpts.includes(x)), deckTypeOpts.join(','));
+      // Switch to embed + point at an external slide URL → still validates.
+      await p.selectOption('#f-deck-type', 'embed');
+      await p.evaluate(() => { const i = document.querySelector('#list-deck input'); i.value = 'https://docs.google.com/presentation/d/X/embed'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+      await p.fill('#f-slidecount', '12');
+      await p.waitForTimeout(200);
+      const embedValid = await p.evaluate(() => {
+        const ok = /valid/i.test(document.getElementById('valid-badge')?.textContent || '');
+        let t = null; try { t = JSON.parse(document.querySelector('#json code').textContent).deck.type; } catch {}
+        return ok && t === 'embed';
+      });
+      ok('builder: embed deck type validates + exports', embedValid);
+      // Reset to the demo so the screenshots/overflow checks below are unaffected.
+      await p.click('#load-demo');
+      await p.waitForFunction(() => /valid/i.test(document.getElementById('valid-badge')?.textContent || ''), { timeout: 10000 }).catch(() => {});
       // Responsive: the two-column layout collapses to one column on narrow widths.
       for (const w of [1280, 780, 390]) {
         await p.setViewportSize({ width: w, height: 800 });

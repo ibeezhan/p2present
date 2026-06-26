@@ -21,7 +21,7 @@ function blankState() {
     title: '',
     meta: { author: '', event: '', date: '', description: '' },
     video: { sources: [{ provider: 'youtube', src: '' }], poster: '' },
-    deck: { type: 'html', sources: [{ src: '' }], slideCount: '' },
+    deck: { type: 'html', sources: [{ protocol: 'https', src: '' }], slideCount: '' },
     timing: [{ time: 0, slide: 1, transition: 'cut', label: '' }],
     subtitles: [],
     resolvers: { ipfsGateways: [], webtorrentTrackers: [] },
@@ -100,6 +100,25 @@ function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
 
 const TRANSITIONS = ['cut', 'fade', 'slide', 'none'];
 const PROVIDERS = ['youtube', 'mp4', 'webtorrent', 'ipfs'];
+const DECK_TYPES = ['html', 'pdf', 'embed'];
+const DECK_PROTOCOLS = ['https', 'ipfs', 'webtorrent'];   // transport for a deck source
+
+// The transport a deck source uses, inferred from its src scheme (the loader
+// keys off the same scheme — ipfs:// / magnet: / http(s)).
+function inferProtocol(src) {
+  const s = String(src || '').trim().toLowerCase();
+  if (s.startsWith('ipfs://')) return 'ipfs';
+  if (s.startsWith('magnet:')) return 'webtorrent';
+  return 'https';
+}
+// Per-row src placeholder, sensitive to deck type + chosen transport.
+function deckPlaceholder(type, protocol) {
+  if (protocol === 'ipfs') return 'ipfs://CID/slides.' + (type === 'pdf' ? 'pdf' : 'html');
+  if (protocol === 'webtorrent') return 'magnet:?xt=urn:btih:…';
+  if (type === 'pdf') return 'https://…/slides.pdf';
+  if (type === 'embed') return 'https://docs.google.com/presentation/d/…/embed  ·  speakerdeck/canva embed URL';
+  return 'https://…/deck/index.html';
+}
 
 function el(tag, cls, attrs = {}) {
   const n = document.createElement(tag);
@@ -145,9 +164,14 @@ function renderVideo() {
 function renderDeck() {
   const c = $('list-deck'); c.innerHTML = '';
   state.deck.sources.forEach((row, i) => {
+    if (!row.protocol) row.protocol = inferProtocol(row.src);
     const r = el('div', 'p2-row');
+    const src = input(row.src, (v) => { row.src = v; }, { placeholder: deckPlaceholder(state.deck.type, row.protocol) });
+    const proto = select(row.protocol, DECK_PROTOCOLS, (v) => {
+      row.protocol = v; src.placeholder = deckPlaceholder(state.deck.type, v);
+    });
     r.append(
-      input(row.src, (v) => { row.src = v; }, { placeholder: 'deck url (html/pdf) · magnet: · ipfs://CID' }),
+      proto, src,
       delBtn(() => { state.deck.sources.splice(i, 1); renderDeck(); updatePreview(); }),
     );
     c.appendChild(r);
@@ -221,7 +245,7 @@ function bindStatic() {
   bind('f-poster', (v) => state.video.poster = v);
   bind('f-slidecount', (v) => state.deck.slideCount = v);
   bind('f-split', (v) => state.layout.split = v);
-  $('f-deck-type').addEventListener('change', () => { state.deck.type = $('f-deck-type').value; updatePreview(); });
+  $('f-deck-type').addEventListener('change', () => { state.deck.type = $('f-deck-type').value; renderDeck(); updatePreview(); });
   $('f-mode').addEventListener('change', () => { state.layout.mode = $('f-mode').value; updatePreview(); });
   $('f-transition').addEventListener('change', () => { state.layout.transition = $('f-transition').value; updatePreview(); });
 }
@@ -282,9 +306,10 @@ function loadState(raw) {
     ? raw.video.sources.map((v) => ({ provider: PROVIDERS.includes(v.provider) ? v.provider : 'mp4', src: str(v.src) }))
     : [{ provider: 'youtube', src: '' }];
   s.video.poster = str(raw.video?.poster);
-  s.deck.type = raw.deck?.type === 'pdf' ? 'pdf' : 'html';
+  s.deck.type = DECK_TYPES.includes(raw.deck?.type) ? raw.deck.type : 'html';
   s.deck.sources = Array.isArray(raw.deck?.sources) && raw.deck.sources.length
-    ? raw.deck.sources.map((d) => ({ src: str(d.src) })) : [{ src: '' }];
+    ? raw.deck.sources.map((d) => ({ protocol: inferProtocol(d.src), src: str(d.src) }))
+    : [{ protocol: 'https', src: '' }];
   s.deck.slideCount = raw.deck?.slideCount ?? '';
   s.timing = Array.isArray(raw.timing)
     ? raw.timing.map((t) => ({ time: t.time ?? 0, slide: t.slide ?? 1, transition: t.transition || 'cut', label: str(t.label) }))
@@ -382,7 +407,7 @@ function stampTiming() {
 function addRow(kind) {
   ({
     video: () => { state.video.sources.push({ provider: 'mp4', src: '' }); renderVideo(); },
-    deck: () => { state.deck.sources.push({ src: '' }); renderDeck(); },
+    deck: () => { state.deck.sources.push({ protocol: 'https', src: '' }); renderDeck(); },
     timing: () => { state.timing.push({ time: '', slide: '', transition: 'cut', label: '' }); renderTiming(); },
     subs: () => { state.subtitles.push({ lang: '', label: '', src: '', format: 'vtt', default: false }); renderSubs(); },
     gateways: () => { state.resolvers.ipfsGateways.push(''); renderGateways(); },

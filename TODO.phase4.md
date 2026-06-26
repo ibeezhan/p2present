@@ -13,11 +13,11 @@ Resumable checklist. Commit + push each step.
 - [x] aria-labels + tooltips + short text labels (hidden on narrow)
 - [x] keep "LAYOUT" group
 
-## 3. Subtitles label + full-window overlay
-- [ ] Rename "CC" → "Subtitles" (label/tooltip)
-- [ ] Caption placement setting: video pane vs full player window
-- [ ] Full-window overlay bottom-center, all layout modes incl fullscreen
-- [ ] sensible default + document
+## 3. Subtitles label + full-window overlay ✅
+- [x] Rename "CC" → "Subtitles" (icon button + tooltip + aria)
+- [x] Placement setting: full window vs over video (layout.captionPlacement, default window)
+- [x] Full-window overlay on stage, bottom-center, all modes incl fullscreen; persisted toggle
+- [x] default 'window'; docs pending in Docs step
 
 ## 4. Builder: deck source selection
 - [ ] deck.type: html / pdf / embed

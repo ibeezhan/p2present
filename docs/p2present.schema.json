@@ -56,10 +56,11 @@
       "required": ["type"],
       "description": "The slide deck. `sources` is an ordered fallback list of URLs.",
       "properties": {
-        "type": { "type": "string", "enum": ["html", "pdf"], "description": "Deck adapter to use." },
+        "type": { "type": "string", "enum": ["html", "pdf", "embed"], "description": "Deck adapter to use. \"html\" = an <iframe>'d HTML deck (deck-stage / reveal.js / sections); \"pdf\" = a PDF rendered page-per-slide with pdf.js; \"embed\" = an external embeddable slide URL (Google Slides / SpeakerDeck / Canva …) shown read-only in an <iframe>." },
         "sources": {
           "type": "array",
           "minItems": 1,
+          "description": "Ordered fallback list of deck URLs. Each src may be an https URL, an ipfs:// CID, or a magnet: link (the transport is inferred from the scheme).",
           "items": {
             "type": "object",
             "required": ["src"],
@@ -69,7 +70,17 @@
             "additionalProperties": true
           }
         },
-        "slideCount": { "type": "integer", "minimum": 1, "description": "Total slide count (used for the counter when the deck can't report it)." },
+        "embed": {
+          "type": "object",
+          "description": "Optional deep-link config for deck.type \"embed\" only. Lets the player point the embedded slide URL at a given slide; omit for a display-only embed.",
+          "properties": {
+            "nav": { "type": "string", "enum": ["hash", "query"], "description": "How to encode the slide in the URL: \"hash\" (#param=N, no reload) or \"query\" (?param=N, reloads the frame)." },
+            "param": { "type": "string", "description": "URL parameter name carrying the slide number. Default \"slide\"." },
+            "offset": { "type": "integer", "description": "Slide value for slide 1 (e.g. 0 for a 0-based embed). Default 1." }
+          },
+          "additionalProperties": true
+        },
+        "slideCount": { "type": "integer", "minimum": 1, "description": "Total slide count (used for the counter when the deck can't report it; required for \"embed\" decks, which can't introspect the foreign frame)." },
         "thumbnails": {
           "description": "Optional authored slide thumbnails for the scrubber preview. Either an array of image URLs (indexed by slide, 1-based) or an array of {slide, src}. URLs resolve against the manifest URL if relative. PDF decks auto-render thumbnails when this is omitted; HTML decks fall back to a slide-label card.",
           "oneOf": [
@@ -134,7 +145,8 @@
       "properties": {
         "split": { "type": "number", "minimum": 0.15, "maximum": 0.85, "description": "Slides-pane fraction of the split (0–1; clamped 0.15–0.85). Default 0.6." },
         "mode": { "type": "string", "enum": ["split", "slides-focus", "video-focus", "overlap"], "description": "Initial layout mode. Default \"split\"." },
-        "transition": { "type": "string", "description": "Preferred default slide transition. Default \"fade\"." }
+        "transition": { "type": "string", "description": "Preferred default slide transition. Default \"fade\"." },
+        "captionPlacement": { "type": "string", "enum": ["window", "video"], "description": "Where captions are drawn: \"window\" (default) overlays them along the bottom of the WHOLE player — slides + video, every layout mode incl. fullscreen; \"video\" keeps them inside the video pane (native <track> for mp4). The user can override this in the Subtitles menu (persisted in localStorage)." }
       },
       "additionalProperties": true
     }

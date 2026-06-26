@@ -19,9 +19,11 @@ import { Registry } from '../registry.js';
 import { BaseDeckAdapter } from './base.js';
 import { HtmlDeckAdapter } from './html-deck.js';
 import { PdfDeckAdapter } from './pdf-deck.js';
+import { EmbedDeckAdapter } from './embed-deck.js';
 
 export { BaseDeckAdapter };
 
 export const deckAdapters = new Registry('deck adapter');
 deckAdapters.register('html', HtmlDeckAdapter);
 deckAdapters.register('pdf', PdfDeckAdapter);
+deckAdapters.register('embed', EmbedDeckAdapter);
