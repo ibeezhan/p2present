@@ -112,18 +112,20 @@ function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
 const TRANSITIONS = ['cut', 'fade', 'slide', 'none'];
 const PROVIDERS = ['youtube', 'mp4', 'webtorrent', 'ipfs'];
 const DECK_TYPES = ['html', 'pdf', 'embed'];
-const DECK_PROTOCOLS = ['https', 'ipfs', 'webtorrent'];   // transport for a deck source
+const DECK_PROTOCOLS = ['https', 'arweave', 'ipfs', 'webtorrent'];   // transport for a deck source
 
 // The transport a deck source uses, inferred from its src scheme (the loader
-// keys off the same scheme — ipfs:// / magnet: / http(s)).
+// keys off the same scheme — ar:// / ipfs:// / magnet: / http(s)).
 function inferProtocol(src) {
   const s = String(src || '').trim().toLowerCase();
+  if (s.startsWith('ar://')) return 'arweave';
   if (s.startsWith('ipfs://')) return 'ipfs';
   if (s.startsWith('magnet:')) return 'webtorrent';
   return 'https';
 }
 // Per-row src placeholder, sensitive to deck type + chosen transport.
 function deckPlaceholder(type, protocol) {
+  if (protocol === 'arweave') return 'ar://TXID/slides.' + (type === 'pdf' ? 'pdf' : 'html');
   if (protocol === 'ipfs') return 'ipfs://CID/slides.' + (type === 'pdf' ? 'pdf' : 'html');
   if (protocol === 'webtorrent') return 'magnet:?xt=urn:btih:…';
   if (type === 'pdf') return 'https://…/slides.pdf';
@@ -164,7 +166,7 @@ function renderVideo() {
     const r = el('div', 'p2-row');
     r.append(
       select(row.provider, PROVIDERS, (v) => { row.provider = v; }),
-      input(row.src, (v) => { row.src = v; }, { placeholder: 'youtube id / url · mp4 url · magnet: · ipfs://CID' }),
+      input(row.src, (v) => { row.src = v; }, { placeholder: 'youtube id / url · mp4 url · ar://TXID · magnet: · ipfs://CID' }),
       delBtn(() => { state.video.sources.splice(i, 1); renderVideo(); updatePreview(); }),
     );
     c.appendChild(r);

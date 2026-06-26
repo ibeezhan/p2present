@@ -4,7 +4,7 @@
 
 p2present is a tiny, dependency-light, **static** site (no server runtime). It has two faces from one repo:
 
-1. **Resolver host** — a landing page with a source box. Paste a remote presentation **source** — an `https://…/p2present.json`, an **`ipfs://` CID**, or a **`magnet:` link** — and it fetches the manifest + assets (over whichever transport) and renders the synced player. Content can live anywhere, including the decentralized web.
+1. **Resolver host** — a landing page with a source box. Paste a remote presentation **source** — an `https://…/p2present.json`, an **`ar://` tx**, an **`ipfs://` CID**, or a **`magnet:` link** — and it fetches the manifest + assets (over whichever transport) and renders the synced player. Content can live anywhere, including the decentralized web.
 2. **Forkable self-host template** — fork the repo, drop your own slides + video + timing JSON into `docs/content/`, enable GitHub Pages, and you have your own instance.
 
 **▶ Home:** https://ibeezhan.github.io/p2present/ — the landing page. The player lives at **[`/app/`](https://ibeezhan.github.io/p2present/app/)**.
@@ -16,7 +16,7 @@ The "Load the MoaV demo" button opens the *"Rage-Coding the Mother of All VPNs"*
 | **[HTML deck demo](https://ibeezhan.github.io/p2present/app/?p=demo)** | `<deck-stage>` web-component slides in an iframe |
 | **[PDF deck demo](https://ibeezhan.github.io/p2present/app/?p=moav-pdf)** | the same slides rendered from a PDF with pdf.js |
 | **[🛠 Builder](https://ibeezhan.github.io/p2present/builder/)** | assemble a `p2present.json` visually (live preview + schema validation) |
-| **[📤 Host helper](https://ibeezhan.github.io/p2present/host/)** | pin a file to IPFS / seed a WebTorrent in the browser |
+| **[📤 Host helper](https://ibeezhan.github.io/p2present/host/)** | upload a file via a persistence provider (Arweave / IPFS / WebTorrent / S3) |
 
 > Legacy player links on the root (`/?p=…`, `/?src=…`, `/?manifest=…`, `/?demo`) auto-redirect to `/app/`, so older shared links keep working.
 
@@ -24,7 +24,7 @@ The "Load the MoaV demo" button opens the *"Rage-Coding the Mother of All VPNs"*
 
 - **[SPEC.md](SPEC.md)** — the canonical `p2present.json` manifest reference (every field, source transports, loading/share formats, deep-links) + a [JSON Schema](docs/p2present.schema.json).
 - **[AUTHORING.md](AUTHORING.md)** — make a presentation start-to-finish: slides → host assets → build the manifest → share.
-- **[HOSTING.md](HOSTING.md)** — where to put your assets (plain URLs, IPFS, WebTorrent) and how each maps to a manifest entry.
+- **[HOSTING.md](HOSTING.md)** — where to put your assets (plain URLs / S3, Arweave, IPFS, WebTorrent) via pluggable persistence providers, and how each maps to a manifest entry.
 - **[SERVICE.md](SERVICE.md)** — the optional "Save & share" sharing service (a self-deployable Cloudflare Worker + KV that hosts manifests behind short `…/p/<id>` links).
 - **[DOCS.md](DOCS.md)** — a one-page index of everything above.
 - **[ROADMAP.md](ROADMAP.md)** — what's next: community manifest hosting, paid persistence (Arweave pay-once + pinning/seedboxes), and an ENS/EAS verified registry. Open core, free forever.
@@ -61,9 +61,9 @@ Captured with the headless-Chrome smoke harness (`npm run smoke`).
 
 **Tools — the [Builder](https://ibeezhan.github.io/p2present/builder/) and [Host helper](https://ibeezhan.github.io/p2present/host/):**
 
-| Builder (live JSON + validation) | Host (IPFS pin / WebTorrent seed) |
+| Builder (live JSON + validation) | Host (pluggable persistence providers) |
 |----------------------------------|-----------------------------------|
-| ![Manifest builder with live JSON preview and validation](docs/screenshots/builder.png) | ![Host helper: pin to IPFS or seed a WebTorrent](docs/screenshots/host.png) |
+| ![Manifest builder with live JSON preview and validation](docs/screenshots/builder.png) | ![Host helper: pick a persistence provider — Arweave / IPFS / WebTorrent / S3](docs/screenshots/host.png) |
 
 **Decentralized resolver — `ipfs://` and `magnet:` source states:**
 
@@ -92,7 +92,7 @@ Captured with the headless-Chrome smoke harness (`npm run smoke`).
 - **Signed manifests** — optionally **sign** a `p2present.json` with an Ethereum wallet / key (**EIP-191** `personal_sign`) or a raw **Ed25519** keypair in the Builder; the player verifies it on load and shows a **“✓ signed by `<ENS / domain / 0x…>`”** badge (Ethereum addresses reverse-resolve to **ENS**). The signature covers the whole manifest, so any edit invalidates it — and it **never blocks playback**. Dependency-free crypto (`docs/src/crypto/`). See [SPEC → sig](SPEC.md#sig) · [AUTHORING → Sign it](AUTHORING.md#step-5--sign-it-optional).
 - **Thumbnail scrubber + deep-links** — hovering/seeking the timeline shows a **slide preview** for that moment (PDF pages are rendered live; HTML decks use authored thumbnails or a slide-label card). Open the player at an exact spot with `#t=<seconds>&slide=<n>`; the hash tracks where you are, and the **🔗 Share** menu's "copy link to this moment" copies a link to the current spot. See [Loading & sharing](#loading--sharing).
 - **Visual manifest builder** — the **[Builder](https://ibeezhan.github.io/p2present/builder/)** assembles a `p2present.json` from a form (video sources, deck, timing, subtitles, resolvers, layout) with a live JSON preview, **schema validation**, download / copy / open-in-player, load-existing, and a **timing-capture** helper that stamps the playing video's time against the current slide.
-- **In-browser asset hosting** — the **[Host helper](https://ibeezhan.github.io/p2present/host/)** pins a file to **IPFS** (via your own Pinata / web3.storage token, stored only in your browser) or creates + seeds a **WebTorrent** in the tab, handing the resulting `ipfs://` / `magnet:` reference to the Builder. See [HOSTING.md](HOSTING.md).
+- **Pluggable persistence providers** — the **[Host helper](https://ibeezhan.github.io/p2present/host/)** turns a file into a manifest reference through a registry of providers (mirroring the video providers): **Arweave** (`ar://`, pay-once permanent — the default), **IPFS pinning** (`ipfs://`, Pinata / web3.storage), **WebTorrent seedbox** (`magnet:`, in-tab + optional always-on), and **S3 / presigned PUT** (`https`). Tokens stay in your browser; a stubbed **"Make permanent" payment hook** (Stripe / on-chain rent) marks the boundary for paid permanence. See [HOSTING.md](HOSTING.md).
 - **Modular slide transitions** — `cut` · `fade` · `slide` · `none`, in an extensible registry.
 - **Polished controls** — play/pause, scrub-to-seek (with thumbnail preview), slide counter, playback speed (0.75–2×), keyboard + mouse-wheel navigation, **auto-hiding overlay controls in fullscreen**, accessible labels, reduced-motion aware.
 
@@ -178,11 +178,12 @@ Highlights (see **[SPEC.md](SPEC.md)** for every field):
 
 ## Decentralized sources (P2P)
 
-Any `src` — the manifest, the video, the deck, an asset — can be one of three transports:
+Any `src` — the manifest, the video, the deck, an asset — can be one of four transports:
 
 | Transport | Example `src` | How it loads |
 |-----------|---------------|--------------|
 | **https** | `https://host/p2present.json` | fetched directly (CORS required for cross-host) |
+| **arweave** | `ar://<txid>` or `ar://<txid>/path` | tried across the built-in Arweave gateways (`arweave.net` → `ar-io.net`) until one responds |
 | **ipfs**  | `ipfs://bafy…/p2present.json` or a bare `Qm…`/`bafy…` CID | tried across `resolvers.ipfsGateways` (default dweb.link → ipfs.io → cloudflare) until one responds |
 | **magnet**| `magnet:?xt=urn:btih:…` | added to the WebTorrent swarm with `resolvers.webtorrentTrackers`; the matching file is streamed (`<video>`) or read into a Blob URL (deck / manifest) |
 
@@ -346,6 +347,13 @@ See `html-deck.js` (iframe + `<deck-stage>`/reveal.js/generic-sections), `pdf-de
 ### Add a transition
 Create `docs/src/transitions/<name>.js` exporting `{ name, run({ incoming, outgoing, container, duration, direction }) }` (returns a Promise), then register in `docs/src/transitions/index.js`. Use it via a cue's `"transition"`.
 
+### Add a persistence provider
+Create `docs/src/persist/<name>.js` extending `BasePersistenceProvider` (static descriptor — `id/label/scheme/fields/action` — plus `async put(file, {onProgress}) → { ref, scheme, gateway? }`), then register it in `docs/src/persist/index.js`:
+```js
+persistProviders.register('filecoin', FilecoinProvider);
+```
+The Host page builds its picker + config fields from the registry automatically. See `arweave.js` / `pinning.js` / `seedbox.js` / `s3.js`, and `payments.js` for the stubbed "Make permanent" hook.
+
 ---
 
 ## How sync stays loop-free
@@ -369,7 +377,7 @@ The engine derives the active slide purely from `slideAtTime(videoTime)`. When t
 **Phase 3 — shipped:**
 
 - ✅ **Visual manifest [Builder](https://ibeezhan.github.io/p2present/builder/)** — build/edit a `p2present.json` with live preview + schema validation + timing capture.
-- ✅ **[Host helper](https://ibeezhan.github.io/p2present/host/)** — pin to IPFS (your own token) / seed a WebTorrent in-browser; see [HOSTING.md](HOSTING.md).
+- ✅ **[Host helper](https://ibeezhan.github.io/p2present/host/)** — upload an asset in-browser via a persistence provider (generalized to a registry in Phase 9: Arweave / IPFS / WebTorrent / S3); see [HOSTING.md](HOSTING.md).
 - ✅ **PDF-deck demo** — a second demo (`?p=moav-pdf`) exercising the pdf.js adapter.
 - ✅ **Thumbnail scrubber** — slide previews on hover/seek (PDF pages rendered live; HTML via authored thumbnails).
 - ✅ **Deep-links** — `#t=<seconds>&slide=<n>` opens at a spot; the hash tracks navigation; a 📍 "this spot" share variant.
@@ -382,11 +390,15 @@ The engine derives the active slide purely from `slideAtTime(videoTime)`. When t
 
 - ✅ **Signed manifests** — sign a `p2present.json` with an Ethereum wallet / key (**EIP-191**) or a raw **Ed25519** keypair in the Builder; the player verifies on load and badges the signer (**ENS** reverse-resolved for Ethereum), never blocking playback. Dependency-free crypto in `docs/src/crypto/` + `docs/src/sign.js`; scheme in [SPEC → sig](SPEC.md#sig).
 
+**Phase 9 — shipped:**
+
+- ✅ **Pluggable persistence providers** — a `docs/src/persist/` registry (mirroring the video providers) turns a file into a manifest reference: **arweave** (`ar://`, pay-once permanent — default), **pinning** (`ipfs://`), **seedbox** (`magnet:`), **s3** (`https`). The Host page builds its UI from the registry; tokens stay in the browser. A **"Make permanent" payment hook** (Stripe / on-chain rent) is defined as a documented adapter boundary — stubbed, no keys in the repo. See [HOSTING.md](HOSTING.md) + [SERVICE.md](SERVICE.md#make-permanent).
+
 **Next up:**
 
 - Optional in-page Helia (gateway-free IPFS) when the runtime is feasible.
 - Per-slide notes / transcript track; authored HTML-deck thumbnail capture.
-- Paid persistence (Arweave pay-once + pinning/seedboxes) and a verified registry — see [ROADMAP.md](ROADMAP.md).
+- Wire a live "Make permanent" rail + a verified ENS/EAS registry — see [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -402,21 +414,22 @@ docs/                     # ← GitHub Pages root (served as-is, no build)
   p2present.schema.json   # JSON Schema for the v1.0 manifest
   .nojekyll               # keep! lets _ds/ assets through Pages
   builder/                # visual manifest builder (index.html, builder.js/.css)
-  host/                   # IPFS pin + WebTorrent seed helper (index.html, host.js/.css)
+  host/                   # persistence-provider host helper (index.html, host.js/.css)
   src/
-    main.js               # resolver: source (https/ipfs/magnet/base64/service id) → manifest → Player; deep-link hash; Save & share
+    main.js               # resolver: source (https/ar/ipfs/magnet/base64/service id) → manifest → Player; deep-link hash; Save & share
     service.js            # client for the sharing service (save/update/report; configurable base URL)
     player.js             # layout modes + divider + fullscreen + scrubber thumbnails + deep-links + input
     sync.js               # bidirectional timeline engine
     subtitles.js          # vtt/srt parsing + caption rendering (track + overlay)
     manifest.js  time.js  # load/validate (p2present.json v1); HH:MM:SS parser
-    resolve.js            # https/ipfs/magnet transports + base64 + WebTorrent client
+    resolve.js            # https/ar/ipfs/magnet transports + base64 + WebTorrent client
     schema-validate.js    # tiny dependency-free JSON-Schema validator (Builder)
     sign.js               # manifest signing/verify: canonical JSON + EIP-191 + Ed25519 + ENS describe
     crypto/  { keccak, secp256k1, base64url, ens }   # dependency-free signing primitives
     registry.js           # generic plugin registry
     decks/   { base, index, html-deck, pdf-deck, embed-deck }   # adapters expose thumbnail()
     video/   { base, index, youtube, mp4, webtorrent, ipfs }
+    persist/ { base, index, arweave, pinning, seedbox, s3, payments }   # host-asset providers + payment hook
     transitions/ { index, cut, fade, slide, none }
   content/demo/           # the bundled HTML-deck demo (deck + manifest + subtitles)
   content/moav-pdf/       # the bundled PDF-deck demo (slides.pdf + manifest)

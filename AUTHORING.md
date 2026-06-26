@@ -29,8 +29,8 @@ slides + video  ─▶  host the assets  ─▶  p2present.json  ─▶  share a
   exactly this way.
 
 **Video** is your talk recording. The lowest-effort path is **YouTube** (just use
-the video id). You can also host an `mp4` yourself, or put it on IPFS / WebTorrent
-(Step 2).
+the video id). You can also host an `mp4` yourself, or put it on Arweave / IPFS /
+WebTorrent / S3 (Step 2).
 
 > Tip: keep the slide order identical between your deck and the video so the
 > 1-based slide numbers in `timing` line up cleanly.
@@ -39,19 +39,25 @@ the video id). You can also host an `mp4` yourself, or put it on IPFS / WebTorre
 
 ## Step 2 — Host the assets
 
-Each asset becomes a `src` in the manifest. You have three options per asset —
-mix freely (see [HOSTING.md](HOSTING.md) for the full detail):
+Each asset becomes a `src` in the manifest. The
+[Host helper](https://ibeezhan.github.io/p2present/host/) turns a file into a
+reference through a **persistence provider** you pick — mix freely per asset (see
+[HOSTING.md](HOSTING.md) for the full detail):
 
-1. **Plain URL** — drop files on any static host (your server, a CDN, GitHub
-   Pages). Reference them by `https://…`. Relative paths work too if the manifest
-   ships alongside the files.
-2. **IPFS** — content-addressed + durable when pinned. On the
-   [Host helper](https://ibeezhan.github.io/p2present/host/), pick **Pin to IPFS**,
-   paste your own Pinata/web3.storage token (stored only in your browser), upload a
-   file, and copy the `ipfs://<cid>` reference.
-3. **WebTorrent** — peer-to-peer. On the Host helper, pick **Seed via WebTorrent**,
-   choose a file, and copy the `magnet:` URI (the tab seeds while open; use
-   `webtorrent-cli` for always-on seeding).
+1. **Plain URL / S3** — drop files on any static host (your server, a CDN, GitHub
+   Pages), or use the Host page's **s3** provider to PUT to a presigned URL.
+   Reference them by `https://…`. Relative paths work too if the manifest ships
+   alongside the files.
+2. **Arweave** *(default)* — pay-once **permanent** storage. Pick the **arweave**
+   provider, point it at an upload service you fund (Irys/Turbo), click
+   **Make permanent 💎**, and copy the `ar://<txid>` reference. (Without your own
+   credits, the button shows how to wire a paid "Make permanent" flow.)
+3. **IPFS** — content-addressed + durable when pinned. Pick the **pinning**
+   provider, paste your own Pinata/web3.storage token (stored only in your
+   browser), upload a file, and copy the `ipfs://<cid>` reference.
+4. **WebTorrent** — peer-to-peer. Pick the **seedbox** provider, choose a file,
+   and copy the `magnet:` URI (the tab seeds while open; add an always-on seedbox
+   URL or use `webtorrent-cli` for persistent seeding).
 
 YouTube needs no hosting — just the id. References you produce on the Host page are
 remembered and surface in the Builder's **📦 Hosted references** card, so you can
@@ -70,8 +76,8 @@ valid `p2present.json` for you, with a live JSON preview and **schema validation
    `ipfs`) with its `src`. Multiple rows = an ordered **fallback list**; the player
    tries each until one loads. Paste the references from Step 2 here.
 3. **Deck** — choose the **type** (`html` / `pdf` / `embed`) and add the deck
-   `src`(s). Each source row has a **protocol** dropdown (https / ipfs /
-   webtorrent), mirroring the video sources, so a P2P deck is built the same way.
+   `src`(s). Each source row has a **protocol** dropdown (https / arweave / ipfs /
+   webtorrent), mirroring the video sources, so a P2P or permaweb deck is built the same way.
    - `html` — a self-hosted HTML deck (`<deck-stage>` / reveal.js / `<section>`s).
    - `pdf` — a `.pdf`, rendered page-per-slide by pdf.js.
    - `embed` — an external embeddable slide URL (Google Slides *publish to web →
@@ -184,7 +190,7 @@ scheme: [SPEC → sig](SPEC.md#sig).
 ## Checklist
 
 - [ ] Slides exist as an HTML folder or a PDF
-- [ ] Talk video is on YouTube / mp4 / IPFS / WebTorrent
+- [ ] Talk video is on YouTube / mp4 / Arweave / IPFS / WebTorrent / S3
 - [ ] Every asset has a working reference (try **Open in player**)
 - [ ] `timing[]` covers each slide boundary, sorted by time
 - [ ] Manifest shows **✓ valid** in the Builder

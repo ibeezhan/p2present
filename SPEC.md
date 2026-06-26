@@ -5,8 +5,8 @@ is the canonical reference for the **v1.0** schema. A machine-readable JSON Sche
 lives at [`docs/p2present.schema.json`](docs/p2present.schema.json).
 
 Every source in a manifest — the manifest itself, the video, the deck, and
-assets — may be a plain **`https`** URL, an **`ipfs://`** CID, or a **`magnet:`**
-link. See [Source transports](#source-transports) and
+assets — may be a plain **`https`** URL, an **`ar://`** Arweave tx, an
+**`ipfs://`** CID, or a **`magnet:`** link. See [Source transports](#source-transports) and
 [Loading & sharing](#loading--sharing-query-args--base64).
 
 ---
@@ -344,17 +344,25 @@ implementation is dependency-free and runs identically in the browser and Node
 ## Source transports
 
 A *source* is any string p2present is asked to fetch — the manifest, the video,
-the deck, subtitles, the poster, an external timing file. Three transports are
+the deck, subtitles, the poster, an external timing file. Four transports are
 recognised, anywhere a `src` is accepted:
 
 | Transport  | Form | Resolution |
 |------------|------|------------|
 | **https**  | `https://host/path` (or a path relative to the manifest) | fetched directly; relative paths resolve against the manifest's URL |
+| **arweave**| `ar://<txid>[/path]` | expanded against the built-in Arweave gateways (`arweave.net`, then `ar-io.net`), tried in order until one responds |
 | **ipfs**   | `ipfs://<cid>[/path]` or a bare `Qm…` / `bafy…` CID | expanded against `resolvers.ipfsGateways` (`{cid}` placeholder, or `…/ipfs/<cid>`), tried in order until one responds |
 | **magnet** | `magnet:?xt=urn:btih:…` | added to the WebTorrent swarm with `resolvers.webtorrentTrackers`; the matching file is streamed (`<video>`) or read into a Blob URL (deck / manifest) |
 
 Bare tokens that are neither a path nor a CID (e.g. a YouTube id) are left
 verbatim for the provider.
+
+These references are produced by **persistence providers** — a pluggable
+interface (`docs/src/persist/`, mirroring the video providers) that the Host page
+uses to turn a file into a reference: `arweave` → `ar://` (pay-once permanent),
+`pinning` → `ipfs://`, `seedbox` → `magnet:`, `s3` → `https`. A "Make permanent"
+payment hook (Stripe / on-chain rent) is defined but unwired in the static build.
+See [HOSTING.md](HOSTING.md) and [SERVICE.md](SERVICE.md#make-permanent).
 
 > **Self-hosting needs no gateway.** If every `src` is a plain `https` URL on
 > your own server, p2present never touches a public IPFS gateway or tracker —
@@ -432,8 +440,9 @@ the Share menu's **📍 Copy link to this moment** option copies a
   assemble/edit a manifest visually with live JSON + validation against this
   schema, then download / copy / open-in-player. See [AUTHORING.md](AUTHORING.md).
 - **[Host helper](https://ibeezhan.github.io/p2present/host/)** (`docs/host/`) —
-  pin assets to IPFS or seed a WebTorrent in-browser to produce `ipfs://` /
-  `magnet:` references. See [HOSTING.md](HOSTING.md).
+  upload an asset through a pluggable **persistence provider** (Arweave / IPFS
+  pinning / WebTorrent seedbox / S3) to produce an `ar://` / `ipfs://` / `magnet:`
+  / `https` reference. See [HOSTING.md](HOSTING.md).
 
 ---
 

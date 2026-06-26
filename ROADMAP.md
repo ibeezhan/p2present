@@ -21,13 +21,16 @@ The static player + format are done and in production:
 - **HTML / PDF / embed** decks.
 - Subtitles (VTT/SRT), layout modes, fullscreen, deep-links + a share menu.
 - **Visual Builder** (schema-validated `p2present.json`) and an in-browser **Host helper**.
+- **Community manifest hosting** ([Save & share](SERVICE.md) pastebin service) — *v1, shipped.*
+- **Signed manifests** (EIP-191 / Ed25519, verified + badged in the player) — *v1.1, shipped.*
+- **Pluggable persistence providers** (Arweave `ar://` default · IPFS pinning · WebTorrent seedbox · S3) with a stubbed "Make permanent" payment hook — *v2 layer, shipped; paid rail pending.*
 - 100% static — fork it, drop content in `docs/content/`, enable GitHub Pages.
 
 See [README](README.md) and [SPEC.md](SPEC.md) for the manifest format.
 
 ---
 
-## v1 — Community manifest hosting (pastebin) · *coming*
+## v1 — Community manifest hosting (pastebin) · *✅ shipped*
 
 A free place to publish a manifest when you don't want to run a server at all.
 
@@ -41,7 +44,7 @@ A free place to publish a manifest when you don't want to run a server at all.
 
 ---
 
-## v1.1 — Signed manifests · *coming*
+## v1.1 — Signed manifests · *✅ shipped*
 
 Make a published manifest tamper-evident before any registry exists.
 
@@ -54,23 +57,26 @@ that play.
 
 ---
 
-## v2 — Paid persistence (pluggable) · *coming*
+## v2 — Paid persistence (pluggable) · *layer shipped; paid rail pending*
 
 Keep a talk online for good without seeding it from your laptop. The persistence
-layer is a **pluggable backend** chosen per talk:
+layer is a **pluggable provider interface** (`docs/src/persist/`, mirroring the
+video providers) chosen per upload — **shipped in Phase 9**:
 
-| Backend | Model | Notes |
+| Provider | Model | Status |
 |---|---|---|
-| `arweave` *(default)* | **pay-once** | Permanent storage; one payment, no renewals. |
-| `filecoin` | deal-based | Cold, verifiable storage deals. |
-| `pinning` | subscription | Managed IPFS pinning (Pinata / web3.storage / self-run). |
-| `seedbox` | subscription | Always-on WebTorrent seeding. |
-| `s3` | pay-as-you-go | Plain object storage for the "just works" case. |
+| `arweave` *(default)* | **pay-once** | ✅ `ar://` via a user-funded upload endpoint; pay-once rail stubbed |
+| `pinning` | subscription | ✅ Managed IPFS pinning (Pinata / web3.storage) → `ipfs://` |
+| `seedbox` | subscription | ✅ WebTorrent seed (in-tab + optional always-on) → `magnet:` |
+| `s3` | pay-as-you-go | ✅ Plain object storage / presigned PUT → `https` |
+| `filecoin` | deal-based | ⏳ Cold, verifiable storage deals (register a new provider) |
 
-- **Arweave pay-once is the default**: pay once, the assets + manifest stay up.
-- Optional ongoing **pinning / seedbox** add-ons keep IPFS & WebTorrent copies warm.
-- Backend is declared in (or alongside) the manifest, so the player and tooling
-  stay backend-agnostic.
+- The Host page builds its UI from the registry; each provider turns a file into
+  a reference, with tokens kept only in the browser.
+- **What's pending:** the **"Make permanent" payment hook** — `docs/src/persist/payments.js`
+  defines the Stripe (fiat) and on-chain-rent adapter boundary, but ships no keys.
+  Wiring a live rail (so a hosted button can charge + fund an Arweave upload for
+  the author) is the remaining v2 work. See [SERVICE.md → Make permanent](SERVICE.md#make-permanent).
 
 **Why:** this is the one thing you genuinely *can't* get for free — durable hosting
 when your machine is offline. Pay only for what persists.

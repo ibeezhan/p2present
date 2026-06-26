@@ -5,22 +5,36 @@ assets — the **talk video**, the **slide deck** (HTML or PDF), optional
 **subtitles**, and slide **thumbnails**. p2present never hosts anything for you:
 you choose where each asset lives and put a reference to it in the manifest.
 
-Every `src` in a manifest can be one of three transport kinds, and you can mix
+Every `src` in a manifest can be one of four transport kinds, and you can mix
 them freely (even as an ordered fallback list — see [SPEC.md](SPEC.md)):
 
 | Transport | Looks like | Best for |
 |-----------|-----------|----------|
-| **Plain URL** | `https://host/talk.mp4` | self-hosting, any static host, a CDN |
+| **Plain URL** | `https://host/talk.mp4` | self-hosting, any static host, a CDN, S3 |
+| **Arweave** | `ar://<txid>` or `<txid>/path` | pay-once **permanent** storage (permaweb) |
 | **IPFS** | `ipfs://<cid>` or `<cid>/path` | content-addressed, gateway-served, optionally pinned |
 | **WebTorrent** | `magnet:?xt=urn:btih:…` | peer-to-peer streaming, no server |
 
-The **[Host helper page](https://ibeezhan.github.io/p2present/host/)** automates
-the IPFS and WebTorrent options in your browser; this guide explains all three
-and how each maps to a manifest entry.
+The **[Host helper page](https://ibeezhan.github.io/p2present/host/)** turns a file
+into one of these references in your browser. It is built around a pluggable
+**persistence-provider** interface (mirroring the video-provider pattern): pick a
+provider, supply the config it needs, upload, and copy the reference into the
+Builder. Four providers ship:
+
+| Provider | Produces | Model | Module |
+|----------|----------|-------|--------|
+| **arweave** *(default)* | `ar://` | pay-once permanent | `docs/src/persist/arweave.js` |
+| **pinning** | `ipfs://` | Pinata / web3.storage (rent) | `docs/src/persist/pinning.js` |
+| **seedbox** | `magnet:` | WebTorrent (in-tab + always-on) | `docs/src/persist/seedbox.js` |
+| **s3** | `https` | S3 / presigned PUT | `docs/src/persist/s3.js` |
+
+Add your own with `persistProviders.register('filecoin', FilecoinProvider)` — one
+class with a `put(file) → { ref, scheme }` method (see `docs/src/persist/index.js`).
 
 > The whole site is static (GitHub Pages). The Host page runs entirely in your
 > browser — your files and API tokens go directly to the provider you pick
-> (Pinata, web3.storage, the WebTorrent swarm), never to a p2present server.
+> (Arweave node, Pinata, web3.storage, the WebTorrent swarm, your bucket), never
+> to a p2present server.
 
 ---
 
@@ -45,6 +59,10 @@ The simplest option: drop the files on any web server that sends
 - **GitHub Pages** is a great free static host: commit your assets, enable Pages,
   and your URLs are `https://<user>.github.io/<repo>/…`. Fork this repo to get the
   player + a `/docs` Pages setup for free (see the README).
+- **S3 / object storage** — the Host page's **s3** provider PUTs a file to a
+  presigned URL (or any PUT endpoint) you supply, then references the public
+  object URL. Make the object publicly readable and CORS-enabled. Nothing is
+  stored by p2present; the presigned URL + public URL stay in your browser.
 
 ### Mapping to the manifest
 
@@ -58,7 +76,54 @@ The simplest option: drop the files on any web server that sends
 
 ---
 
-## 2. IPFS
+## 2. Arweave (permanent — pay once)
+
+Arweave is **pay-once permanent** storage: you fund an upload once and the data
+lives on the *permaweb* indefinitely (no recurring rent, unlike a pinning
+service). A manifest references it as `ar://<txid>` (optionally with a sub-path).
+The player resolves that to an Arweave gateway (`arweave.net`, then `ar-io.net`),
+so produced references play directly.
+
+Because a static page can't sign + fund an Arweave transaction without a heavy
+wallet bundle, the Host page's **arweave** provider uploads through an **upload
+service you point it at** — an [Irys](https://irys.xyz) / [Turbo (ArDrive)](https://ardrive.io)
+node, or any bundler that accepts an authenticated `POST` of the bytes and
+returns a JSON body with the transaction id (`{ "id": "…" }`). Enter the endpoint
+URL (and a Bearer token if your node needs one) in the Host page — both are kept
+**only in your browser**. Click **Make permanent 💎** and you get back
+`ar://<txid>`.
+
+```jsonc
+{
+  "video": { "sources": [{ "provider": "mp4", "src": "ar://<txid>/talk.mp4" }] },
+  "deck":  { "type": "pdf", "sources": [{ "src": "ar://<txid>" }] }
+}
+```
+
+> The player tries the built-in Arweave gateway list (`arweave.net`, then
+> `ar-io.net`) in order. Any `ar://` reference also works as a plain
+> `https://arweave.net/<txid>` URL if you'd rather hard-code a gateway.
+
+### "Make it permanent" without your own credits (payment hook)
+
+If you **don't** configure an upload endpoint, **Make permanent 💎** instead calls
+p2present's **payment hook** — the place a paid deployment would charge for the
+upload (Stripe fiat, or an on-chain rent path) and fund it for you. This static
+build ships **no payment keys**, so the button surfaces a clear note explaining
+how to wire one. The adapter boundary and both rails (Stripe + on-chain) are
+documented in **[SERVICE.md → Wiring the "Make permanent" button](SERVICE.md#make-permanent)**.
+
+### Mapping to the manifest
+
+| Asset | Entry |
+|-------|-------|
+| Video | `video.sources[] = { "provider": "mp4", "src": "ar://<txid>" }` |
+| Deck (html/pdf) | `deck.sources[] = { "src": "ar://<txid>" }` (or `ar://<txid>/index.html`) |
+| Subtitles | `subtitles[] = { "src": "ar://<txid>" }` |
+
+---
+
+## 3. IPFS
 
 IPFS addresses content by hash (a **CID**). Anyone with the CID can fetch the
 file through any gateway, and the same reference works forever regardless of who
@@ -66,14 +131,14 @@ serves it. In a manifest you write `ipfs://<cid>` (optionally with a sub-path,
 e.g. `ipfs://<cid>/index.html`). The player expands that to a list of HTTP
 gateways and tries each until one responds (configurable via `resolvers.ipfsGateways`).
 
-### 2a. Without your own pin (quick, ephemeral)
+### 3a. Without your own pin (quick, ephemeral)
 
 If a file is already on the IPFS network (someone is providing it), you only need
 its CID — no account required. But **nobody is obliged to keep it around**: if no
 node pins it, it can disappear from gateways. Good for experiments; not for a talk
 you want to last.
 
-### 2b. With your own pin (durable) — recommended
+### 3b. With your own pin (durable) — recommended
 
 A **pinning service** keeps your CID available. The Host page supports two
 providers, each using a token **you** create and that is stored **only in your
@@ -122,23 +187,33 @@ Override the gateways the player tries (handy if you run your own):
 
 ---
 
-## 3. WebTorrent
+## 4. WebTorrent
 
 WebTorrent streams files peer-to-peer over WebRTC, addressed by a **magnet** URI.
 There's no server: as long as at least one peer is seeding the file, the player
 can stream it.
 
-### 3a. Browser-tab seeding (Host page) — quick demos
+### 4a. Browser-tab seeding (Host page) — quick demos
 
-On the Host page, pick a file under **Seed via WebTorrent** and click
+On the Host page, choose the **seedbox** provider, pick a file, and click
 **Create & seed**. The tab hashes the file, announces to the trackers, and shows
 the **magnet URI**. Paste it into a manifest.
 
 > ⚠️ Browser-tab seeding lasts only while **that tab stays open**. The moment you
 > close it, no one is seeding and the magnet stops resolving (until another peer
-> appears). Fine for a live demo; use the CLI below for anything persistent.
+> appears). Fine for a live demo; use an always-on seedbox or the CLI below for
+> anything persistent.
 
-### 3b. CLI seeding (`webtorrent-cli`) — persistent
+### 4b. Always-on seedbox (Host page) — persistent, no CLI
+
+The **seedbox** provider has an optional **always-on seedbox URL** field. When set,
+after creating the torrent the Host page also `POST`s `{ magnet, name }` to that
+endpoint (with an optional Bearer token) — a remote always-on WebTorrent client
+**you** run that keeps seeding the magnet after your tab closes. The result is
+tagged **always-on** in the UI. (The seedbox itself is your own small service —
+e.g. `webtorrent-cli` driven by a tiny HTTP listener, or a hosted torrent box.)
+
+### 4c. CLI seeding (`webtorrent-cli`) — persistent
 
 For always-on seeding, run a seeder on a machine that stays up:
 
@@ -170,7 +245,7 @@ the deck type (`.html`/`.pdf`); the video provider picks the largest media file.
 
 ---
 
-## 4. Resilience: fallback source lists
+## 5. Resilience: fallback source lists
 
 `video.sources` and `deck.sources` are **ordered fallback lists** — the player
 tries each in order until one loads. Combine transports so a single dead host or
@@ -189,7 +264,7 @@ gateway doesn't break playback:
 
 ---
 
-## 5. Thumbnails (optional)
+## 6. Thumbnails (optional)
 
 PDF decks auto-render scrubber thumbnails — nothing to host. For HTML decks (or to
 override), host small slide images and list them:

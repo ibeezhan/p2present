@@ -136,6 +136,59 @@ strings; the defaults below apply when a var is absent.
 
 ---
 
+## <a id="make-permanent"></a>Wiring the "Make permanent" button (payment hooks)
+
+The Host page's **arweave** provider offers pay-once **permanent** storage. When
+the author supplies their own Arweave upload endpoint + credits, no payment is
+needed — the file uploads directly. But to offer a **"Make permanent 💎"** button
+that *charges* the author and funds the upload for them, you wire a **payment
+hook**. p2present ships the boundary, not the keys (it is a static site — there
+are **no secrets in the repo**).
+
+The hook lives in [`docs/src/persist/payments.js`](docs/src/persist/payments.js).
+Until configured, `makePermanent()` throws `PaymentNotConfiguredError`, which the
+Host page surfaces as an actionable note (not a crash). To wire a real flow,
+inject one or both adapters **before** the page scripts run:
+
+```html
+<!-- in docs/host/index.html <head>, before host.js -->
+<script>
+window.__P2_PAYMENTS = {
+  // Fiat via Stripe — handled by YOUR server.
+  async stripe({ file, onProgress }) {
+    onProgress?.('Opening checkout…');
+    const { url } = await fetch('/api/quote', {           // your endpoint
+      method: 'POST', body: JSON.stringify({ bytes: file.size }),
+    }).then((r) => r.json());
+    // redirect to Stripe Checkout (or confirm a PaymentIntent); your webhook then
+    // funds an Arweave/Irys upload and records a credit id.
+    location.href = url;
+    return { receipt: '<credit-id-from-your-server>' };
+  },
+  // On-chain rent — a wallet pays the storage node directly.
+  async onchain({ file }) {
+    const price = await irys.getPrice(file.size);          // your bundler SDK
+    const tx = await irys.fund(price);                     // wallet signs
+    return { receipt: tx.id };
+  },
+};
+</script>
+```
+
+**Adapter contract.** Each adapter receives `{ provider, file, onProgress }` and
+returns `{ receipt }` once the upload is funded. `makePermanent()` prefers
+`onchain` when both are present (override per call with `method`). A wired
+deployment continues from the receipt to the actual upload; the **TODO markers**
+in `payments.js` (`TODO(payments)`) show exactly where each rail plugs in. Keep
+all keys server-side / in the wallet — never in the committed site.
+
+> The two concerns are independent: the **upload endpoint** (where bytes go) is
+> the arweave provider's config; the **payment hook** (who pays) is
+> `window.__P2_PAYMENTS`. Configure the endpoint for self-funded uploads, the
+> hook for a paid button, or both.
+
+---
+
 ## Tests
 
 The handler logic is covered by unit tests against a Map-backed mock KV (no
