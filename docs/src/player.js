@@ -315,12 +315,20 @@ export class Player {
     writeLS(LS.split, this.split.toFixed(4));
   }
 
+  // True when the stage stacks its panes vertically (portrait / narrow), so the
+  // divider runs horizontally and the user drags it UP/DOWN to resize.
+  _isVerticalSplit() {
+    return getComputedStyle(this.stage).flexDirection === 'column';
+  }
+
   _initDivider() {
-    let dragging = false;
+    let dragging = false, vertical = false;
     const onMove = (e) => {
       if (!dragging) return;
       const rect = this.stage.getBoundingClientRect();
-      const ratio = (e.clientX - rect.left) / rect.width;
+      const ratio = vertical
+        ? (e.clientY - rect.top) / rect.height     // portrait: top pane (slides)
+        : (e.clientX - rect.left) / rect.width;    // landscape/desktop: left pane
       this.setSplit(ratio);
     };
     const onUp = () => {
@@ -333,16 +341,24 @@ export class Player {
     this.divider.addEventListener('pointerdown', (e) => {
       if (this.mode !== 'split') return;
       e.preventDefault();
+      vertical = this._isVerticalSplit();
       dragging = true;
       this.stage.classList.add('is-dragging');
+      // Capture so the drag keeps tracking even if the pointer leaves the thin
+      // handle (essential for touch on a 26px bar).
+      try { this.divider.setPointerCapture(e.pointerId); } catch {}
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
-    // Keyboard resize for accessibility.
+    // Keyboard resize for accessibility — Left/Up shrink the first pane,
+    // Right/Down grow it, regardless of split orientation.
     this.divider.addEventListener('keydown', (e) => {
       if (this.mode !== 'split') return;
-      if (e.key === 'ArrowLeft') { e.preventDefault(); this.setSplit(this.split - 0.02); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); this.setSplit(this.split + 0.02); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault(); this.setSplit(this.split - 0.02);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault(); this.setSplit(this.split + 0.02);
+      }
     });
     this._dividerCleanup = onUp;
   }
