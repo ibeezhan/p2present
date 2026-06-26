@@ -13,6 +13,7 @@ export class Mp4Provider extends BaseVideoProvider {
     v.style.width = '100%';
     v.style.height = '100%';
     v.crossOrigin = 'anonymous';
+    if (this.poster) v.poster = this.poster;
     this.el = v;
     this.mount.appendChild(v);
 
@@ -27,6 +28,7 @@ export class Mp4Provider extends BaseVideoProvider {
     });
     this.emit('ready');
   }
+  getElement() { return this.el || null; }
   play() { this.el?.play(); }
   pause() { this.el?.pause(); }
   seek(seconds) { if (this.el) this.el.currentTime = seconds; }

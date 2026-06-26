@@ -3,11 +3,17 @@
 // See index.js for the full VideoProvider interface contract.
 
 export class BaseVideoProvider {
-  constructor({ src, mount }) {
+  constructor({ src, mount, manifest, resolvers, poster } = {}) {
     this.src = src;
     this.mount = mount;
+    this.manifest = manifest;
+    this.resolvers = resolvers;     // {ipfsGateways, webtorrentTrackers} for phase-2 providers
+    this.poster = poster;
     this._handlers = Object.create(null);
   }
+  // Providers backed by a real <video> element return it (lets the subtitle
+  // controller attach native <track>s); iframe-based providers return null.
+  getElement() { return null; }
   on(event, fn) {
     (this._handlers[event] ||= []).push(fn);
     return this;

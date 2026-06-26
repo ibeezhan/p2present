@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// import-chapters.mjs — generate a starter sync[] array for a manifest.
+// import-chapters.mjs — generate a starter timing[] array for a manifest.
 //
 // Two input modes:
 //   1. A yt-dlp ".info.json" file (uses its "chapters": [{start_time,title}] array)
 //   2. Pasted "MM:SS Title" / "HH:MM:SS Title" description lines (stdin or a .txt)
 //
-// One sync entry is emitted per chapter/timestamp, slides numbered 1..N in order.
+// One timing entry is emitted per chapter/timestamp, slides numbered 1..N in order.
 // Times are float seconds. Tweak slide numbers/transitions afterwards to taste.
+// ("timing" is the p2present v1 name for the cue array; the loader also accepts
+// the legacy "sync" key.)
 //
 // Usage:
 //   node scripts/import-chapters.mjs talk.info.json            # yt-dlp json
@@ -15,8 +17,9 @@
 //   node scripts/import-chapters.mjs talk.info.json --transition fade
 //   node scripts/import-chapters.mjs talk.info.json --merge docs/content/demo/manifest.json
 //
-// Output: prints a JSON { "sync": [...] } to stdout. With --merge <manifest>,
-// writes the sync array back into that manifest file (preserving other keys).
+// Output: prints a JSON { "timing": [...] } to stdout. With --merge <manifest>,
+// writes the timing array back into that manifest file (preserving other keys;
+// a legacy "sync" key, if present, is replaced).
 
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -75,21 +78,22 @@ function main() {
     console.error('No input. Pass a .info.json / .txt path, or pipe "MM:SS Title" lines.');
     process.exit(1);
   }
-  let sync;
+  let timing;
   const looksJson = name.endsWith('.json') || text.trim().startsWith('{');
   if (looksJson) {
-    sync = fromInfoJson(JSON.parse(text));
+    timing = fromInfoJson(JSON.parse(text));
   } else {
-    sync = fromTextLines(text);
+    timing = fromTextLines(text);
   }
 
   if (mergePath) {
     const manifest = JSON.parse(readFileSync(mergePath, 'utf8'));
-    manifest.sync = sync;
+    delete manifest.sync;         // drop the legacy key so cues don't get duplicated
+    manifest.timing = timing;
     writeFileSync(mergePath, JSON.stringify(manifest, null, 2) + '\n');
-    console.error(`Wrote ${sync.length} cues into ${mergePath}`);
+    console.error(`Wrote ${timing.length} cues into ${mergePath}`);
   } else {
-    process.stdout.write(JSON.stringify({ sync }, null, 2) + '\n');
+    process.stdout.write(JSON.stringify({ timing }, null, 2) + '\n');
   }
 }
 

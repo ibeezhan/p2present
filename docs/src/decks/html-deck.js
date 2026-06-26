@@ -78,7 +78,8 @@ export class HtmlDeckAdapter extends BaseDeckAdapter {
     if (this._total) return this._total;
     if (this._stage?._slides?.length) return this._stage._slides.length;
     if (this._sections?.length) return this._sections.length;
-    // Fall back to the highest slide referenced by the manifest's sync cues.
+    // Manifest-declared count, then the highest slide referenced by sync cues.
+    if (Number.isFinite(this.manifest?.deck?.slideCount)) return this.manifest.deck.slideCount;
     const cues = this.manifest?.sync || [];
     return cues.reduce((m, c) => Math.max(m, c.slide), 1);
   }
