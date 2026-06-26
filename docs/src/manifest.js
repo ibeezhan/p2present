@@ -232,13 +232,20 @@ function normaliseSubtitle(s, i, baseUrl, gateways) {
   };
 }
 
+const CAPTION_PLACEMENTS = ['window', 'video'];
+
 function normaliseLayout(layout = {}) {
   let split = Number(layout.split);
   if (!Number.isFinite(split)) split = 0.6;
   split = Math.min(0.85, Math.max(0.15, split));
   const mode = LAYOUT_MODES.includes(layout.mode) ? layout.mode : 'split';
   const transition = typeof layout.transition === 'string' ? layout.transition : 'fade';
-  return { split, mode, transition };
+  // Caption placement: 'window' overlays captions along the bottom of the WHOLE
+  // player (slides + video, all layout modes incl. fullscreen) — the default;
+  // 'video' keeps them inside the video pane only. See SPEC.md / SubtitleController.
+  const captionPlacement = CAPTION_PLACEMENTS.includes(layout.captionPlacement)
+    ? layout.captionPlacement : 'window';
+  return { split, mode, transition, captionPlacement };
 }
 
 // Resolve a src to a fetchable URL. ipfs:// → primary gateway URL; magnet: left

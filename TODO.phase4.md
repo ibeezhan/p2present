@@ -8,10 +8,10 @@ Resumable checklist. Commit + push each step.
 - [x] Fix: adapter commits canonical visibility per nav, nav token guards overlap, absolute-stacked pages
 - [x] Regression: smoke walks 7 slides + rapid burst, asserts non-blank/visible
 
-## 2. Layout icons — meaningful glyphs + labels
-- [ ] split / slides-focus / video-focus / overlap / fullscreen glyphs depict mode
-- [ ] aria-labels + visible tooltips (+ short text label on wide screens)
-- [ ] keep "LAYOUT" group
+## 2. Layout icons — meaningful glyphs + labels ✅
+- [x] SVG glyphs depict each mode (split/slides/video/PiP/fullscreen)
+- [x] aria-labels + tooltips + short text labels (hidden on narrow)
+- [x] keep "LAYOUT" group
 
 ## 3. Subtitles label + full-window overlay
 - [ ] Rename "CC" → "Subtitles" (label/tooltip)

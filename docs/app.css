@@ -157,6 +157,15 @@ body {
   text-shadow: 0 1px 2px rgba(0,0,0,0.9);
 }
 .p2-cc-overlay[hidden] { display: none; }
+/* Full-window placement: the overlay is mounted on the whole player stage and
+   pinned bottom-centre, so captions read over slides + video together in every
+   layout mode (and in fullscreen, where the stage fills the viewport). Sits above
+   both panes incl. the overlap PiP (z-index 20). */
+.p2-cc-window {
+  z-index: 30;
+  bottom: max(4%, 14px); max-width: min(80%, 60ch);
+  font-size: clamp(15px, 2.2vw, 26px);
+}
 /* Native <track> captions (mp4 path) — keep them off the very bottom edge so
    they don't collide with the video's own control bar. */
 .p2-video-pane video::cue { background: rgba(0,0,0,0.72); }
@@ -232,7 +241,7 @@ body {
   font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase;
   line-height: 1; color: inherit;
 }
-.p2-mode-btn.is-on { border-color: var(--accent); color: var(--accent); background: var(--panel); }
+.p2-mode-btn.is-on, .p2-fs-btn.is-on { border-color: var(--accent); color: var(--accent); background: var(--panel); }
 .p2-btn.is-on { border-color: var(--accent); color: var(--accent); }
 /* Narrow widths: drop the text labels (icon + tooltip/aria-label remain). */
 @media (max-width: 560px) { .p2-btn-label { display: none; } }
@@ -259,9 +268,14 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 .p2-cc-menu.is-open { display: flex; }
-.p2-cc-item { text-align: left; border-color: transparent; }
-.p2-cc-item:hover { border-color: var(--accent); }
-.p2-cc-item.is-active { color: var(--accent); border-color: var(--accent-dim); }
+.p2-cc-head {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); padding: 6px 6px 2px; user-select: none;
+}
+.p2-cc-head:first-child { padding-top: 2px; }
+.p2-cc-item, .p2-cc-place { text-align: left; border-color: transparent; }
+.p2-cc-item:hover, .p2-cc-place:hover { border-color: var(--accent); }
+.p2-cc-item.is-active, .p2-cc-place.is-active { color: var(--accent); border-color: var(--accent-dim); }
 
 /* Fullscreen fallback for platforms without element Fullscreen API (iOS Safari):
    pin the whole player over the viewport. dvh + safe-area keep it clear of the

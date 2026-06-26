@@ -27,11 +27,15 @@ const MODES = [
     icon: '<rect x="1" y="1.5" width="14" height="9" rx="1"/><rect class="f" x="9.3" y="6" width="4.7" height="3.6" rx="0.6"/>' },
 ];
 const FS_ICON = '<path d="M1.5 4.5 V1.5 H4.5 M11.5 1.5 H14.5 V4.5 M14.5 7.5 V10.5 H11.5 M4.5 10.5 H1.5 V7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+// Subtitles: a caption box with two short text lines.
+const CC_ICON = '<rect x="1" y="2.2" width="14" height="7.6" rx="1.6"/><path d="M3.6 6.9 H7" stroke-linecap="round"/><path d="M9 6.9 H12.4" stroke-linecap="round"/>';
 const LS = {
   split: 'p2present:split',
   mode: 'p2present:mode',
   pip: 'p2present:pip',
+  caption: 'p2present:caption',
 };
+const CAPTION_PLACEMENTS = ['window', 'video'];
 const FOCUS_GROW = 0.78;   // weight of the dominant pane in the focus modes
 
 export class Player {
@@ -87,9 +91,14 @@ export class Player {
       (s) => s.src,
     );
 
-    // Subtitles (captions). Native <track> for mp4; synced overlay for YouTube.
+    // Subtitles (captions). Placement: 'window' overlays them along the bottom of
+    // the whole player; 'video' keeps them in the video pane (native <track> for
+    // mp4). Manifest provides the default; the user's choice (localStorage) wins.
+    const placement = readStr(LS.caption,
+      this.manifest.layout?.captionPlacement || 'window', CAPTION_PLACEMENTS);
     this.subs = new SubtitleController({
-      tracks: this.manifest.subtitles, video: this.video, mount: videoMount,
+      tracks: this.manifest.subtitles, video: this.video,
+      mount: videoMount, windowMount: stage, placement,
     });
     await this.subs.load();
 
@@ -194,7 +203,7 @@ export class Player {
 
     // Fullscreen (native where supported; CSS-maximized fallback for iOS Safari).
     this.btnFs = iconButton(svgIcon(FS_ICON), 'Full', 'Fullscreen (f)', () => this._toggleFullscreen());
-    this.btnFs.classList.add('p2-mode-btn', 'p2-fs-btn');
+    this.btnFs.classList.add('p2-fs-btn');
     this.btnFs.setAttribute('aria-pressed', 'false');
     document.addEventListener('fullscreenchange', this._onFsChange = () => {
       this._updateFsButton();
@@ -227,7 +236,7 @@ export class Player {
     const list = this.subs.list();
     if (!list.length) return null;
     const wrap = el('div', 'p2-cc');
-    const btn = button('CC', 'Captions', () => {
+    const btn = iconButton(svgIcon(CC_ICON), 'Subtitles', 'Subtitles', () => {
       menu.classList.toggle('is-open');
       btn.setAttribute('aria-expanded', menu.classList.contains('is-open') ? 'true' : 'false');
     });
@@ -245,8 +254,22 @@ export class Player {
       item.dataset.lang = lang ?? '';
       return item;
     };
-    menu.append(mkItem(null, 'Off'));
+    const heading = (t) => { const h = el('div', 'p2-cc-head'); h.textContent = t; return h; };
+    menu.append(heading('Track'), mkItem(null, 'Off'));
     for (const t of list) menu.append(mkItem(t.lang, t.label));
+
+    // Placement toggle: where the captions are drawn.
+    const mkPlace = (place, text) => {
+      const item = button(text, text, () => {
+        this.subs.setPlacement(place);
+        writeLS(LS.caption, place);
+      });
+      item.classList.add('p2-cc-place');
+      item.dataset.place = place;
+      return item;
+    };
+    menu.append(heading('Placement'),
+      mkPlace('window', 'Full window'), mkPlace('video', 'Over video'));
     wrap.append(btn, menu);
 
     const refresh = () => {
@@ -254,6 +277,10 @@ export class Player {
       btn.classList.toggle('is-on', !!active);
       menu.querySelectorAll('.p2-cc-item').forEach((it) => {
         it.classList.toggle('is-active', (it.dataset.lang || null) === (active || null));
+      });
+      const place = this.subs.getPlacement();
+      menu.querySelectorAll('.p2-cc-place').forEach((it) => {
+        it.classList.toggle('is-active', it.dataset.place === place);
       });
     };
     this.subs.on(refresh);

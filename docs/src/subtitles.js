@@ -1,34 +1,40 @@
 // subtitles.js — caption loading + rendering.
 //
 // Loads the manifest's subtitles[] (WebVTT or SubRip/.srt — .srt is converted to
-// WebVTT in-browser at load), and renders them two ways depending on the video:
+// WebVTT in-browser at load), and renders them through one of two paths, chosen
+// by the caption *placement* setting (manifest layout.captionPlacement, or the
+// user's choice in the Subtitles menu):
 //
-//   * Native <track>  — when the provider exposes a real <video> element (mp4),
-//                       captions are attached as <track kind="subtitles"> and the
-//                       browser renders/styles them. Switching language flips the
-//                       active track's `mode` to "showing".
-//   * Synced overlay  — for providers without a <video> element (YouTube iframe,
-//                       which can't accept external tracks), we render an overlay
-//                       div and drive it from the sync clock: update(time) shows
-//                       the cue active at that time.
+//   * 'window' (default) — a synced overlay div mounted on the whole player
+//                          stage, pinned bottom-centre so captions read clearly
+//                          over slides + video together, in every layout mode and
+//                          in fullscreen. Driven by update(time) from the sync
+//                          clock; works for ANY provider (YouTube or mp4).
+//   * 'video'            — captions stay inside the video pane only. For a real
+//                          <video> element (mp4) that means native <track> the
+//                          browser renders + styles; for providers without one
+//                          (YouTube iframe) it falls back to the synced overlay
+//                          positioned within the video pane.
 //
 // A SubtitleController is created per presentation by the Player, which calls
 // update(time) every frame from its state callback and exposes list()/setActive()
-// to the CC menu.
+// + getPlacement()/setPlacement() to the Subtitles menu.
 
 import { parseTime } from './time.js';
 
 export class SubtitleController {
-  /** @param {{tracks:Array, video:object, mount:HTMLElement}} opts */
-  constructor({ tracks, video, mount }) {
+  /** @param {{tracks:Array, video:object, mount:HTMLElement, windowMount?:HTMLElement, placement?:string}} opts */
+  constructor({ tracks, video, mount, windowMount, placement }) {
     this.tracks = Array.isArray(tracks) ? tracks : [];
     this.video = video;
-    this.mount = mount;
+    this.mount = mount;                 // the video pane mount
+    this.windowMount = windowMount || mount;   // the whole-player stage
+    this.placement = placement === 'video' ? 'video' : 'window';
     this.entries = [];        // {lang,label,default,cues,vttText,trackEl?}
     this.activeLang = null;
     this.activeEntry = null;
     this._blobUrls = [];
-    this._native = false;
+    this._renderMode = 'overlay';   // 'overlay' | 'native'
     this._listeners = [];
   }
 
@@ -37,7 +43,7 @@ export class SubtitleController {
 
   hasTracks() { return this.entries.length > 0; }
 
-  /** Fetch + parse every subtitle source, then wire up the right renderer. */
+  /** Fetch + parse every subtitle source, then wire up the renderers. */
   async load() {
     const loaded = await Promise.all(this.tracks.map(async (t) => {
       try {
@@ -53,9 +59,10 @@ export class SubtitleController {
     this.entries = loaded.filter(Boolean);
     if (!this.entries.length) return this;
 
-    const videoEl = this.video?.getElement?.() || null;
-    if (videoEl) { this._native = true; this._buildNativeTracks(videoEl); }
-    else { this._native = false; this._buildOverlay(); }
+    this.videoEl = this.video?.getElement?.() || null;
+    this._buildOverlay();                              // always available
+    if (this.videoEl) this._buildNativeTracks(this.videoEl);  // only when a <video> exists
+    this._applyPlacement();
 
     const def = this.entries.find((e) => e.default);
     this.setActive(def ? def.lang : null);
@@ -75,7 +82,7 @@ export class SubtitleController {
       videoEl.appendChild(track);
       e.trackEl = track;
     }
-    // Tracks start disabled; setActive() turns the chosen one on.
+    // Tracks start disabled; setActive()/_applyPlacement() turn the chosen one on.
     requestAnimationFrame(() => {
       for (const e of this.entries) if (e.trackEl?.track) e.trackEl.track.mode = 'disabled';
     });
@@ -86,11 +93,47 @@ export class SubtitleController {
     overlay.className = 'p2-cc-overlay';
     overlay.setAttribute('aria-live', 'polite');
     overlay.hidden = true;
-    this.mount.appendChild(overlay);
-    this.overlay = overlay;
+    this.overlay = overlay;   // parented by _applyPlacement
   }
 
-  /** Cues for the CC menu: [{lang, label, default}]. */
+  /**
+   * Decide the active renderer + where the overlay lives, from this.placement.
+   * 'window' → overlay on the whole-player stage; 'video' → native <track> when a
+   * <video> exists, else overlay inside the video pane. Idempotent.
+   */
+  _applyPlacement() {
+    if (!this.overlay) return;
+    const native = (this.placement === 'video' && !!this.videoEl);
+    this._renderMode = native ? 'native' : 'overlay';
+
+    if (native) {
+      this.overlay.remove();                 // hide the synced overlay entirely
+      this.overlay.hidden = true;
+    } else {
+      const parent = this.placement === 'window' ? this.windowMount : this.mount;
+      this.overlay.classList.toggle('p2-cc-window', this.placement === 'window');
+      if (this.overlay.parentElement !== parent) parent.appendChild(this.overlay);
+    }
+    // Disable native tracks whenever the overlay is the active renderer so the
+    // browser doesn't double-render captions inside the <video>.
+    if (!native) for (const e of this.entries) if (e.trackEl?.track) e.trackEl.track.mode = 'disabled';
+    this._lastText = null;                    // force the next update() to repaint
+    this.setActive(this.activeLang);          // re-apply the chosen language
+  }
+
+  /** Current placement ('window' | 'video'). */
+  getPlacement() { return this.placement; }
+
+  /** Change caption placement and re-wire the renderer live. */
+  setPlacement(placement) {
+    const p = placement === 'video' ? 'video' : 'window';
+    if (p === this.placement) return;
+    this.placement = p;
+    this._applyPlacement();
+    this._emit();
+  }
+
+  /** Cues for the menu: [{lang, label, default}]. */
   list() {
     return this.entries.map((e) => ({ lang: e.lang, label: e.label, default: e.default }));
   }
@@ -100,12 +143,13 @@ export class SubtitleController {
   /** Switch active language; pass null/'off' to turn captions off. */
   setActive(lang) {
     this.activeLang = lang || null;
-    if (this._native) {
+    if (this._renderMode === 'native') {
       for (const e of this.entries) {
         if (e.trackEl?.track) e.trackEl.track.mode = (e.lang === this.activeLang) ? 'showing' : 'disabled';
       }
     } else {
       this.activeEntry = this.entries.find((e) => e.lang === this.activeLang) || null;
+      this._lastText = null;
       if (this.overlay && !this.activeEntry) { this.overlay.hidden = true; this.overlay.textContent = ''; }
     }
     this._emit();
@@ -113,7 +157,7 @@ export class SubtitleController {
 
   /** Drive the overlay from the sync clock (no-op for native tracks). */
   update(time) {
-    if (this._native || !this.overlay || !this.activeEntry) return;
+    if (this._renderMode === 'native' || !this.overlay || !this.activeEntry) return;
     const cue = cueAt(this.activeEntry.cues, time);
     const text = cue ? cue.text : '';
     if (text === this._lastText) return;

@@ -197,7 +197,37 @@ async function main() {
       const hasVideo = await p.waitForSelector('.p2-video-pane video', { timeout: 20000 })
         .then(() => true).catch(() => false);
       ok('fallback: ipfs(dead)→mp4 yields <video>', hasVideo);
+
+      // --- Subtitles: renamed control + full-window caption overlay ---
+      await p.waitForSelector('.p2-cc-btn', { timeout: 15000 }).catch(() => {});
+      const subBtn = await p.evaluate(() => ({
+        label: document.querySelector('.p2-cc-btn .p2-btn-label')?.textContent || '',
+        aria: document.querySelector('.p2-cc-btn')?.getAttribute('aria-label') || '',
+        places: document.querySelectorAll('.p2-cc-place').length,
+      }));
+      ok('subtitles: control labelled "Subtitles" (not CC)', /subtitle/i.test(subBtn.label) && /subtitle/i.test(subBtn.aria), JSON.stringify(subBtn));
+      ok('subtitles: placement menu offers both options', subBtn.places === 2, String(subBtn.places));
+      // Drive a cue + confirm the overlay defaults to the WHOLE player stage.
+      await p.evaluate(() => { const v = document.querySelector('.p2-video-pane video'); if (v) v.currentTime = 2; });
       await p.waitForTimeout(500);
+      const winCap = await p.evaluate(() => {
+        const ov = document.querySelector('.p2-cc-overlay');
+        return { onStage: ov?.parentElement?.classList.contains('p2-stage'), isWindow: ov?.classList.contains('p2-cc-window'), text: (ov?.textContent || '').trim().length };
+      });
+      ok('subtitles: full-window overlay mounts on the player stage', winCap.onStage && winCap.isWindow);
+      ok('subtitles: full-window overlay renders cue text', winCap.text > 0, `len=${winCap.text}`);
+      // Toggle to "Over video" → native <track> takes over, overlay detaches.
+      await p.click('.p2-cc-btn'); await p.waitForTimeout(120);
+      await p.click('.p2-cc-place[data-place="video"]'); await p.waitForTimeout(250);
+      const vidCap = await p.evaluate(() => ({
+        overlayGone: !document.querySelector('.p2-cc-overlay'),
+        track: [...document.querySelectorAll('.p2-video-pane video track')].some((t) => t.track?.mode === 'showing'),
+      }));
+      ok('subtitles: "over video" switches to native track', vidCap.overlayGone && vidCap.track, JSON.stringify(vidCap));
+      // Back to full window for the screenshot + later checks.
+      await p.click('.p2-cc-place[data-place="window"]'); await p.waitForTimeout(200);
+      await p.click('.p2-cc-btn');   // close the menu
+      await p.waitForTimeout(300);
       await p.screenshot({ path: path.join(SHOTS, 'mp4-fallback.png') });
 
       // --- fullscreen auto-hide overlay controls (exercised on this working player) ---
