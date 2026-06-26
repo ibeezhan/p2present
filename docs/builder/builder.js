@@ -11,6 +11,10 @@ import { encodeBase64 } from '../src/resolve.js';
 import { normaliseManifest, loadPresentation } from '../src/manifest.js';
 import { validate } from '../src/schema-validate.js';
 import { Player } from '../src/player.js';
+import {
+  signEip191WithKey, signEip191WithWallet, signEd25519, generateEd25519,
+  signingString, describeSigner, abbreviateAddress,
+} from '../src/sign.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -26,6 +30,8 @@ function blankState() {
     subtitles: [],
     resolvers: { ipfsGateways: [], webtorrentTrackers: [] },
     layout: { split: 0.6, mode: 'split', transition: 'fade' },
+    sig: null,          // the embedded `sig` block once signed
+    sigPayload: null,   // the exact canonical string signed (for staleness detection)
   };
 }
 
@@ -81,6 +87,11 @@ function buildManifest(s) {
   }
 
   m.layout = { split: clamp(Number(s.layout.split) || 0.6, 0.15, 0.85), mode: s.layout.mode, transition: s.layout.transition };
+
+  // Author signature (Phase 8). Kept verbatim; goes LAST so the signed block is
+  // easy to spot in the export. If the manifest changed since signing it'll be
+  // flagged stale (see updateSignStatus) — the player would show it as invalid.
+  if (s.sig && s.sig.alg && s.sig.signature) m.sig = s.sig;
   return m;
 }
 
@@ -293,7 +304,94 @@ function updatePreview() {
     badge.className = 'p2-valid is-valid';
     list.hidden = true; list.innerHTML = '';
   }
+  updateSignStatus(manifest);
   return errors;
+}
+
+// --- signing (Phase 8) ------------------------------------------------------
+
+let edKey = null;   // last generated Ed25519 keypair, kept in memory to re-sign
+
+// Build the manifest to sign — never include an existing sig in the signed bytes.
+function manifestForSigning() { return buildManifest({ ...state, sig: null }); }
+
+function setSignResult(msg, isError = false) {
+  const r = $('sign-result');
+  if (!r) return;
+  r.hidden = !msg;
+  r.textContent = msg || '';
+  r.classList.toggle('is-error', !!isError);
+}
+
+function applySignature(signed) {
+  const sig = signed.sig;
+  state.sig = sig;
+  state.sigPayload = signingString(signed, { alg: sig.alg, signer: sig.signer });
+  updatePreview();
+}
+
+async function signWithWallet() {
+  const provider = (typeof window !== 'undefined') && window.ethereum;
+  if (!provider) { setSignResult('No injected wallet (e.g. MetaMask) detected in this browser.', true); return; }
+  if (updatePreview().length) { setSignResult('Fix the manifest issues before signing.', true); return; }
+  try {
+    setSignResult('Check your wallet to approve the signature…');
+    applySignature(await signEip191WithWallet(manifestForSigning(), { provider }));
+  } catch (err) { setSignResult('Wallet signing failed: ' + (err?.message || err), true); }
+}
+
+function signWithEthKey() {
+  const field = $('sign-ethkey');
+  const key = field.value.trim();
+  if (!key) { setSignResult('Paste an Ethereum private key first.', true); return; }
+  if (updatePreview().length) { setSignResult('Fix the manifest issues before signing.', true); return; }
+  try {
+    applySignature(signEip191WithKey(manifestForSigning(), key));
+    field.value = '';   // don't leave the secret sitting in the field
+  } catch (err) { setSignResult('Signing failed: ' + (err?.message || err), true); }
+}
+
+async function signWithEd25519() {
+  if (updatePreview().length) { setSignResult('Fix the manifest issues before signing.', true); return; }
+  try {
+    if (!edKey) edKey = await generateEd25519();
+    const domain = $('sign-ed-domain').value.trim() || undefined;
+    applySignature(await signEd25519(manifestForSigning(), { ...edKey, domain }));
+    const saved = $('sign-ed-saved');
+    saved.hidden = false; saved.innerHTML = '';
+    saved.append(
+      el('div', '', { textContent: '🔑 Private key (base64url pkcs8) — save it to re-sign with the same identity:' }),
+      el('code', 'p2-hosted-ref', { textContent: edKey.privateKeyPkcs8 }),
+    );
+  } catch (err) { setSignResult('Ed25519 signing failed: ' + (err?.message || err), true); }
+}
+
+function removeSignature() {
+  state.sig = null; state.sigPayload = null; edKey = null;
+  const saved = $('sign-ed-saved'); if (saved) saved.hidden = true;
+  setSignResult('');
+  updatePreview();
+}
+
+function updateSignStatus(manifest) {
+  const badge = $('sign-status');
+  const removeBtn = $('sign-remove');
+  if (!badge) return;
+  if (!state.sig) { badge.textContent = ''; badge.className = 'p2-count'; if (removeBtn) removeBtn.hidden = true; return; }
+  if (removeBtn) removeBtn.hidden = false;
+  const sig = state.sig;
+  const label = sig.alg === 'eip191'
+    ? abbreviateAddress(sig.signer?.address)
+    : (sig.signer?.domain || ('key ' + String(sig.signer?.key || '').slice(0, 10) + '…'));
+  const stale = signingString(manifest, { alg: sig.alg, signer: sig.signer }) !== state.sigPayload;
+  if (stale) {
+    badge.textContent = '⚠ edited since signing — re-sign';
+    badge.className = 'p2-count is-stale';
+    setSignResult('The manifest changed since you signed it — re-sign (or remove the signature) before publishing, or the player will mark it invalid.', true);
+  } else {
+    badge.textContent = `✓ signed (${sig.alg}) · ${label}`;
+    badge.className = 'p2-count is-signed';
+  }
 }
 
 // --- load existing ----------------------------------------------------------
@@ -320,6 +418,12 @@ function loadState(raw) {
   s.resolvers.ipfsGateways = arr(raw.resolvers?.ipfsGateways);
   s.resolvers.webtorrentTrackers = arr(raw.resolvers?.webtorrentTrackers);
   s.layout = { split: raw.layout?.split ?? 0.6, mode: raw.layout?.mode || 'split', transition: raw.layout?.transition || 'fade' };
+  // Preserve an existing signature when editing a signed manifest (it'll be
+  // flagged stale the moment any signed field changes).
+  if (raw.sig && raw.sig.alg && raw.sig.signature) {
+    s.sig = raw.sig;
+    try { s.sigPayload = signingString(raw, { alg: raw.sig.alg, signer: raw.sig.signer }); } catch { s.sigPayload = null; }
+  }
   state = s;
   fillStatic(); renderAllLists(); updatePreview();
 }
@@ -464,6 +568,12 @@ function init() {
   $('act-open').addEventListener('click', openInPlayer);
   $('act-copy').addEventListener('click', copyJson);
   $('act-download').addEventListener('click', downloadJson);
+
+  // Signing (Phase 8).
+  $('sign-wallet').addEventListener('click', signWithWallet);
+  $('sign-ethkey-btn').addEventListener('click', signWithEthKey);
+  $('sign-ed-gen').addEventListener('click', signWithEd25519);
+  $('sign-remove').addEventListener('click', removeSignature);
 
   // Load the schema in the background, then re-validate once it arrives.
   fetch('../p2present.schema.json')

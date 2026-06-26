@@ -118,6 +118,36 @@
         </div>
       </details>
 
+      <details class="p2-card" id="sign-card">
+        <summary>🔏 Sign (optional) <span class="p2-count" id="sign-status"></span></summary>
+        <p class="p2-hint">Prove who published this. The player verifies on load and shows a <strong>“✓ signed by …”</strong> badge — it never blocks playback. The signature covers the <em>whole</em> manifest, so if you edit anything after signing you’ll need to sign again. Keys are used locally and never leave your browser.</p>
+
+        <div class="p2-sign-method">
+          <strong>Ethereum wallet</strong>
+          <div class="p2-row-actions">
+            <button type="button" class="p2-load p2-primary" id="sign-wallet">🦊 Connect wallet &amp; sign</button>
+          </div>
+        </div>
+
+        <div class="p2-sign-method">
+          <strong>…or an Ethereum private key</strong>
+          <label class="p2-field"><span>Private key (EIP-191, used locally)</span>
+            <input id="sign-ethkey" type="password" autocomplete="off" spellcheck="false" placeholder="0x… 32-byte hex" />
+          </label>
+          <button type="button" class="p2-load" id="sign-ethkey-btn">Sign with this key</button>
+        </div>
+
+        <div class="p2-sign-method">
+          <strong>…or a raw Ed25519 keypair</strong>
+          <label class="p2-field"><span>Domain label (optional)</span><input id="sign-ed-domain" type="text" placeholder="example.com" /></label>
+          <button type="button" class="p2-load" id="sign-ed-gen">🔑 Generate key &amp; sign</button>
+          <div id="sign-ed-saved" class="p2-hint p2-sign-secret" hidden></div>
+        </div>
+
+        <div id="sign-result" class="p2-sign-result" hidden></div>
+        <button type="button" class="p2-load" id="sign-remove" hidden>✕ Remove signature</button>
+      </details>
+
       <details class="p2-card">
         <summary>Layout</summary>
         <div class="p2-grid-2">
