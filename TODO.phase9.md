@@ -24,22 +24,28 @@ Payment hooks for "Make it permanent" are **STUBBED** (no live keys): a clear
 on-chain rent path. No secrets in the repo.
 
 ## Tasks
-- [ ] `docs/src/persist/base.js` — `BasePersistenceProvider` (static descriptor + `put()`)
-- [ ] `docs/src/persist/index.js` — `persistProviders` Registry + interface contract
-- [ ] `docs/src/persist/arweave.js` — ar:// (permanent; routes through payment hook when no endpoint)
-- [ ] `docs/src/persist/pinning.js` — ipfs:// (Pinata JWT / web3.storage token)
-- [ ] `docs/src/persist/seedbox.js` — magnet: (in-tab WebTorrent + optional always-on seedbox POST)
-- [ ] `docs/src/persist/s3.js` — https (presigned / PUT endpoint)
-- [ ] `docs/src/persist/payments.js` — STUBBED Stripe + on-chain rent adapters + TODO boundary
-- [ ] resolve.js: `ar://` recogniser + gateway URL; httpCandidates + manifest resolveSrc/deck wired
-- [ ] Host UI (`docs/host/`): provider picker + dynamic fields + upload + "Make permanent" + seedbox stop
-- [ ] Tests: provider interface with mock uploads (each scheme) + payment stub throws documented error
-- [ ] Smoke: host loads, provider switch, pinning pin (mock), arweave payment stub, seedbox UI, 390/780/1280
-- [ ] Docs: HOSTING + SERVICE (Stripe/crypto wiring) + SPEC + README + ROADMAP
-- [ ] DONE gate: commit+push each step, write .phase9.done, telegram summary+URL
+- [x] `docs/src/persist/base.js` — `BasePersistenceProvider` (static descriptor + `put()`)
+- [x] `docs/src/persist/index.js` — `persistProviders` Registry + interface contract
+- [x] `docs/src/persist/arweave.js` — ar:// (permanent; routes through payment hook when no endpoint)
+- [x] `docs/src/persist/pinning.js` — ipfs:// (Pinata JWT / web3.storage token)
+- [x] `docs/src/persist/seedbox.js` — magnet: (in-tab WebTorrent + optional always-on seedbox POST)
+- [x] `docs/src/persist/s3.js` — https (presigned / PUT endpoint)
+- [x] `docs/src/persist/payments.js` — STUBBED Stripe + on-chain rent adapters + TODO boundary
+- [x] resolve.js: `ar://` recogniser + gateway URL; httpCandidates + manifest resolveSrc/deck wired
+- [x] Host UI (`docs/host/`): provider picker + dynamic fields + upload + "Make permanent" + seedbox stop
+- [x] Tests: provider interface with mock uploads (each scheme) + payment stub throws documented error
+- [x] Smoke: host loads, provider switch, pinning pin (mock), arweave payment stub, seedbox UI, 390/780/1280
+- [x] Docs: HOSTING + SERVICE (Stripe/crypto wiring) + SPEC + README + ROADMAP + AUTHORING + DOCS; builder ar://
+- [x] DONE gate: commit+push each step, write .phase9.done, telegram summary+URL
 
 ## Progress log
 - (init) Read full codebase + video-provider/host patterns. Designed provider table above.
   telegram via `openclaw message send --channel telegram --target '-5269558152'`.
+- Built docs/src/persist/ (Registry + BasePersistenceProvider + arweave/pinning/seedbox/s3 +
+  payments.js stub). Wired ar:// through resolve.js + manifest.js. Rebuilt /host/ around the
+  registry (provider picker + dynamic fields + Make-permanent payment note + seedbox stop).
+  ar:// in the Builder deck dropdown. 45 unit (mock uploads per scheme + payment stub) + 23
+  Worker + 101 smoke green @ 390/780/1280, 0 real console errors. Docs across the board.
+  Committed + pushed each step.
 </content>
 </invoke>
