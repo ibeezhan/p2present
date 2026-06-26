@@ -4,39 +4,39 @@ Resumable overnight job. On each relaunch: `git log --oneline -15`, read this fi
 Commit + push to `main` after each meaningful step (Pages auto-redeploys).
 
 ## A. Cleanup (v0 removal)
-- [ ] manifest.js: drop v0 paths (video.provider/src single, deck.src single, bare top-level sync[]). v1 only.
-- [ ] manifest.js: remove `version` legacy detection + v0 comments.
-- [ ] SPEC.md: delete "Backward compatibility" section + "still loads unchanged" comments.
-- [ ] schema: remove v0 mention in description.
-- [ ] demo manifest already pure v1 — verify.
-- [ ] sweep adjacent dead code / stale comments.
+- [x] manifest.js: drop v0 paths; v1 only (loadPresentation + normaliseManifest).
+- [x] manifest.js: removed `version` detection + v0 comments.
+- [x] SPEC.md: deleted "Backward compatibility"; added Source transports + Loading & sharing.
+- [x] schema: removed v0 mention; updated provider descriptions.
+- [x] demo manifest already pure v1 — verified.
+- [x] swept stale comments.
 
 ## B. Fullscreen auto-hide controls
-- [ ] In fullscreen/maximized: controls become a fixed/absolute overlay (no reflow of slides/video).
-- [ ] Auto-hide; reveal on mousemove + tap; fade out after ~2.5s; smooth fade.
+- [x] Immersive: controls become a fixed overlay (no reflow); cursor hidden with bar.
+- [x] Auto-hide; reveal on pointermove + tap + key; fade out after 2.5s; smooth fade. (smoke ✓)
 
 ## C. Phase 2 — P2P / decentralized providers
-- [ ] resolve.js: shared ipfs/magnet helpers + default gateways/trackers + gateway-fetch + webtorrent-fetch.
-- [ ] WebTorrent video provider (real): magnet → stream into <video> via file.renderTo; trackers from resolvers; graceful fallback.
-- [ ] IPFS video provider (real): ipfs:// CID → gateway fallback list into <video>; graceful fallback.
-- [ ] Deck over P2P: deck.sources may be ipfs:// (gateway URLs) or magnet: (webtorrent blob) → iframe/pdf.
-- [ ] main.js resolver routing: https / ipfs:// / magnet: as the SOURCE (manifest + assets). Remove "coming soon".
-- [ ] base64/query-arg loading: ?manifest=<url>, ?src=<base64 inline-or-source>, ?p=<local name>.
-- [ ] Share-link button → builds ?src=<base64> for current presentation.
-- [ ] Self-hosted plain-URL story verified (no hard gateway dependency).
+- [x] resolve.js: ipfs/magnet helpers, gateways/trackers, fetchFirstOk, webtorrent fetch, base64.
+- [x] WebTorrent provider: magnet → file.renderTo(<video>); trackers from resolvers; graceful fallback.
+- [x] IPFS provider: ipfs:// → gateway fallback list into <video>; graceful fallback. (smoke ✓)
+- [x] Deck over P2P: ipfs:// (gateway URLs) + magnet: (webtorrent blob) in html/pdf adapters.
+- [x] main.js routing: https / ipfs:// / magnet: as SOURCE; "coming soon" removed. (smoke ✓)
+- [x] base64/query-arg: ?manifest= / ?src=<base64 inline-or-source> / ?p=<local>. (smoke ✓)
+- [x] Share-link button → ?src=<base64>. (UI shipped)
+- [x] Self-hosted plain-URL: no hard gateway dependency (verified via local mp4 fixture).
 
 ## D. Docs
-- [ ] SPEC.md: source types, resolvers, base64/query-arg formats, share-link scheme; remove v0.
-- [ ] README: phase-2 features, load-from-each-protocol, screenshots, updated roadmap.
-- [ ] schema in sync with additions.
+- [x] SPEC.md: transports, resolvers, base64/query-arg, share-link scheme; v0 removed.
+- [x] README: phase-2 features, per-protocol loading, screenshots, roadmap marked done.
+- [x] schema in sync.
 
 ## E. Screenshots per protocol
-- [ ] Headless capture: https/youtube demo, mp4, resolver UI states for ipfs:// and magnet: (input + loading/fallback).
-- [ ] Save to docs/screenshots/, embed in README, note any headless limitations.
+- [x] Headless capture: youtube demo (1280/780/390), mp4 (fallback), fullscreen overlay, ipfs:// + magnet: resolver states.
+- [x] Saved to docs/screenshots/, embedded in README, headless limitation noted.
 
-## VERIFY (each relaunch before done)
-- [ ] Unit tests (resolver routing, base64, ipfs url build, manifest normalise, provider fallback).
-- [ ] Headless smoke @ 390/780/1280: routing, fallback, fullscreen auto-hide, layout modes, subtitles, 0 console errors, assets 200.
+## VERIFY
+- [x] Unit tests 15/15 (recognisers, ipfs urls, base64, manifest normalise, fallback expansion).
+- [x] Headless smoke 21/21 @ 390/780/1280: routing, fallback, auto-hide, modes, subs, 0 console errors, assets 200.
 
 ## DONE gate (all true, committed AND pushed)
 - [ ] write .phase2.done (one-line summary)
@@ -44,5 +44,10 @@ Commit + push to `main` after each meaningful step (Pages auto-redeploys).
 
 ---
 ### Progress log
-- (init) Read full codebase. webtorrent.js/ipfs.js are stubs that throw. Network OK (jsdelivr/esm.sh/yt 200; ipfs.io slow).
+- (init) Read full codebase. webtorrent.js/ipfs.js were throwing stubs. Network OK.
+- A+C+B implemented: resolve.js, real providers, P2P decks, routing, base64/share, auto-hide.
+- Docs: SPEC/README/schema updated, v0 removed.
+- Tests: scripts/test.mjs (15/15) + scripts/smoke.mjs (21/21, system Chrome). Screenshots captured.
+- webtorrent pinned to v1.9.7 UMD bundle (verified window.WebTorrent constructor in-browser).
+- Remaining: final push + verify on Pages, then .phase2.done + telegram.
 </content>
