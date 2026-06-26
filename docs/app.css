@@ -57,9 +57,9 @@ body {
 }
 .p2-load:hover, .p2-btn:hover { border-color: var(--accent); color: var(--accent); }
 .p2-load { font-weight: 600; }
-.p2-share { white-space: nowrap; }
-.p2-share:disabled { opacity: 0.45; cursor: default; }
-.p2-share:disabled:hover { border-color: var(--line); color: var(--fg); }
+.p2-share, .p2-save { white-space: nowrap; }
+.p2-share:disabled, .p2-save:disabled { opacity: 0.45; cursor: default; }
+.p2-share:disabled:hover, .p2-save:disabled:hover { border-color: var(--line); color: var(--fg); }
 
 /* Share popover (YouTube-style "copy link / copy link at current time"). */
 .p2-share-wrap { position: relative; display: inline-flex; }

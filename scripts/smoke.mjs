@@ -65,6 +65,15 @@ const FIXTURES = {
     resolvers: { ipfsGateways: DEAD },
     layout: { split: 0.6, mode: 'split' },
   },
+  // The manifest the mock pastebin service returns for GET /api/p/smoke01 — a
+  // tiny self-contained deck pointing at local assets so the service-load path
+  // mounts a real player offline.
+  'service-doc': {
+    p2present: '1.0', title: 'Smoke Service Deck',
+    video: { sources: [{ provider: 'mp4', src: `${ORIGIN}/content/demo/slides/assets/nedagram-demo.mp4` }] },
+    deck: { type: 'html', sources: [{ src: `${ORIGIN}/content/demo/slides/index.html` }], slideCount: 23 },
+    timing: [{ time: 0, slide: 1 }],
+  },
   // A local-mp4 deck with several timing cues spread across the 63s clip, so a
   // timeline seek can be asserted to move the VIDEO + jump to a distinct slide
   // (deterministic + offline; the YouTube path is checked best-effort separately).
@@ -84,6 +93,23 @@ function serve() {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const url = decodeURIComponent(req.url.split('?')[0]);
+      // --- mock pastebin-lite service (the app's service base points here) ---
+      if (url === '/api/p' && req.method === 'POST') {
+        // Accept the POSTed manifest (drained) and return a fixed short id.
+        const chunks = [];
+        req.on('data', (c) => chunks.push(c));
+        req.on('end', () => {
+          res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+          res.end(JSON.stringify({ id: 'smoke01', editToken: 'tok_smoke_0000', visibility: 'unlisted', url: `${ORIGIN}/p/smoke01`, manifestUrl: `${ORIGIN}/api/p/smoke01`, ipfs: null, expires: null }));
+        });
+        return;
+      }
+      const apiGet = url.match(/^\/api\/p\/([\w.-]+)$/);
+      if (apiGet && req.method === 'GET') {
+        res.writeHead(apiGet[1] === 'smoke01' ? 200 : 404, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+        res.end(apiGet[1] === 'smoke01' ? JSON.stringify(FIXTURES['service-doc']) : JSON.stringify({ error: 'not_found' }));
+        return;
+      }
       if (url.startsWith('/__fixtures__/')) {
         const name = url.slice('/__fixtures__/'.length);
         const fx = FIXTURES[name];
@@ -155,6 +181,9 @@ async function main() {
   try { browser = await chromium.launch({ channel: 'chrome' }); }
   catch { browser = await chromium.launch(); }
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  // Point the app's "Save & share" + service-id loader at our mock service above
+  // (instead of the production default) for every page in this run.
+  await context.addInitScript(() => { window.__P2_SERVICE_BASE = location.origin; });
 
   try {
     // === 0. Landing page (/) — hero, sections, CTA, redirect, responsive ===
@@ -599,6 +628,42 @@ async function main() {
       await p.waitForTimeout(150);
       const whole = await p.evaluate(() => window.__copied.at(-1) || '');
       ok('share: "presentation link" copies a hash-free ?src= link', /[?&]src=/.test(whole) && !/#t=/.test(whole), whole.slice(0, 40));
+      await p.close();
+    }
+
+    // === 6b. Save & share (pastebin-lite) + ?p=<id> service load ===
+    {
+      const p = await newPage(context);
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN }).catch(() => {});
+      await p.goto(`${ORIGIN}/app/?p=demo`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-deck-frame', { timeout: 30000 }).catch(() => {});
+      const saveEnabled = await p.waitForFunction(
+        () => { const b = document.getElementById('save-btn'); return b && !b.disabled; },
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      ok('save: "Save & share" button enabled once a manifest is loaded', saveEnabled);
+      await p.evaluate(() => { window.__copied = []; const o = navigator.clipboard.writeText.bind(navigator.clipboard); navigator.clipboard.writeText = (t) => { window.__copied.push(t); return o(t); }; });
+      await p.click('#save-btn');
+      const savedMsg = await p.waitForFunction(
+        () => /\/p\/smoke01/.test(document.getElementById('status')?.textContent || ''),
+        { timeout: 10000 }).then(() => true).catch(() => false);
+      ok('save: POSTs the manifest + surfaces a short /p/<id> link', savedMsg, (await p.evaluate(() => document.getElementById('status')?.textContent || '')).slice(0, 60));
+      const copied = await p.evaluate(() => window.__copied.at(-1) || '');
+      ok('save: short link copied to clipboard', /\/p\/smoke01$/.test(copied), copied);
+      const tokenSaved = await p.evaluate(() => { try { return JSON.parse(localStorage.getItem('p2present:tokens') || '{}').smoke01 || ''; } catch { return ''; } });
+      ok('save: edit token kept in the author browser', tokenSaved === 'tok_smoke_0000', tokenSaved);
+      await p.close();
+    }
+    {
+      // ?p=<service id> (not a bundled demo) resolves through the backend.
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/app/?p=smoke01`, { waitUntil: 'load' });
+      const titled = await p.waitForFunction(
+        () => document.getElementById('deck-title')?.textContent === 'Smoke Service Deck',
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      ok('service load: ?p=<id> fetches the manifest from the service', titled);
+      const mounted = await p.waitForSelector('.p2-deck-frame', { timeout: 20000 }).then(() => true).catch(() => false);
+      ok('service load: service-hosted presentation mounts the player', mounted);
+      ok('service load: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
       await p.close();
     }
 

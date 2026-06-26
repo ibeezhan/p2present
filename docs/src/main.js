@@ -20,6 +20,11 @@
 import { loadPresentation } from './manifest.js';
 import { encodeBase64, decodeBase64 } from './resolve.js';
 import { Player } from './player.js';
+import { saveManifest, manifestApiUrl, shareUrl, serviceBase } from './service.js';
+
+// Bundled local demos resolve to content/<name>/manifest.json; any OTHER ?p=
+// value is treated as a *service id* and loaded from the pastebin backend.
+const BUNDLED = new Set(['demo', 'moav-pdf']);
 
 // This module is docs/src/main.js, so '../' is the docs root that holds content/.
 const ROOT = new URL('../', import.meta.url).href;
@@ -36,6 +41,7 @@ const $share = document.getElementById('share-btn');
 const $shareMenu = document.getElementById('share-menu');
 const $shareWhole = document.getElementById('share-whole');
 const $shareMoment = document.getElementById('share-moment');
+const $save = document.getElementById('save-btn');
 
 /** Parse a deep-link hash like "#t=125&slide=7" → {t, slide} (or null). */
 function parseDeepLink() {
@@ -50,6 +56,7 @@ function parseDeepLink() {
 
 let player = null;
 let shareValue = '';   // the string a Share link should base64-encode
+let currentRaw = null; // the raw manifest currently playing (for "Save & share")
 
 function setStatus(msg, isError = false) {
   $status.textContent = msg || '';
@@ -81,11 +88,19 @@ function parseBootSource() {
   const manifest = q.get('manifest');
   if (manifest) return { source: manifest, share: manifest, display: manifest };
 
-  // ?demo is a friendly alias for the bundled MoaV PDF demo.
-  const p = q.get('p') || (q.has('demo') ? 'moav-pdf' : null);
+  // ?p=<name|id>, the /p/<id> path form (when served behind the Worker domain),
+  // or the ?demo alias for the bundled MoaV PDF demo.
+  let p = q.get('p');
+  if (!p) { const m = window.location.pathname.match(/\/p\/([\w.-]+)\/?$/); if (m) p = m[1]; }
+  if (!p && q.has('demo')) p = 'moav-pdf';
   if (p && /^[\w.-]+$/.test(p)) {
-    const url = absolute(`content/${p}/manifest.json`);
-    return { source: url, share: url, display: '' };
+    if (BUNDLED.has(p)) {
+      const url = absolute(`content/${p}/manifest.json`);   // bundled local demo
+      return { source: url, share: url, display: '' };
+    }
+    // Otherwise it's a saved presentation id → fetch it from the service. Share
+    // the pretty /p/<id> link; load via the JSON API endpoint.
+    return { source: manifestApiUrl(p), share: manifestApiUrl(p), display: '', shortLink: shareUrl(p) };
   }
 
   const def = absolute(DEFAULT_SOURCE);
@@ -97,9 +112,12 @@ async function run({ source, share, display }) {
   if (player) { try { player.destroy(); } catch {} player = null; }
   $app.innerHTML = '<div class="p2-empty">Loading…</div>';
   shareValue = share || '';
+  currentRaw = null;
+  if ($save) $save.disabled = true;
   if (typeof display === 'string') $src.value = display;
   try {
     const manifest = await loadPresentation(source);
+    currentRaw = manifest._raw || null;
     $title.textContent = manifest.title;
     document.title = `${manifest.title} · p2present`;
     $app.innerHTML = '';
@@ -111,6 +129,7 @@ async function run({ source, share, display }) {
     if (deep) { try { player.applyDeepLink(deep); } catch (e) { console.warn(e); } }
     setStatus('');
     if ($share) $share.disabled = false;
+    if ($save) $save.disabled = !currentRaw;
   } catch (err) {
     console.error(err);
     setStatus(err.message || String(err), true);
@@ -171,6 +190,31 @@ if ($share) {
 }
 if ($shareWhole) $shareWhole.addEventListener('click', () => { copyShareLink(false); openShareMenu(false); });
 if ($shareMoment) $shareMoment.addEventListener('click', () => { copyShareLink(true); openShareMenu(false); });
+
+// "Save & share" — POST the current manifest to the pastebin backend and get a
+// short p2present.com/p/<id> link back (copied to the clipboard). The edit token
+// is kept in this browser (see service.js) so the author can update it later.
+async function saveAndShare() {
+  if (!currentRaw) { setStatus('Nothing to save yet.', true); return; }
+  const base = serviceBase();
+  $save.disabled = true;
+  setStatus(`Saving to ${base}…`);
+  try {
+    const { id, url } = await saveManifest(currentRaw, { visibility: 'unlisted' });
+    const link = url || shareUrl(id);
+    try {
+      await navigator.clipboard.writeText(link);
+      setStatus(`Saved! Short link copied to clipboard: ${link}`);
+    } catch {
+      setStatus(`Saved! Share link: ${link}`);
+    }
+  } catch (err) {
+    setStatus(err.message || String(err), true);
+  } finally {
+    $save.disabled = !currentRaw;
+  }
+}
+if ($save) $save.addEventListener('click', saveAndShare);
 // Close the popover on outside click or Escape.
 document.addEventListener('click', (e) => {
   if (!$shareMenu || $shareMenu.hidden) return;
@@ -199,6 +243,7 @@ $sourceToggle.addEventListener('click', () => {
 
 // Boot.
 if ($share) $share.disabled = true;
+if ($save) $save.disabled = true;
 run(parseBootSource());
 
 function escapeHtml(s) {
