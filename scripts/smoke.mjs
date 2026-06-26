@@ -47,6 +47,7 @@ const MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.vtt': 'text/vtt',
   '.srt': 'application/x-subrip', '.md': 'text/markdown',
+  '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
 };
 
 // In-memory fixtures (kept out of the committed site). A dead IPFS gateway on a
