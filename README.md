@@ -15,12 +15,15 @@ The demo loads by default: the *"Rage-Coding the Mother of All VPNs"* deck (23 s
 
 ## What's in the box
 
-- **Side-by-side player** — slides + video, responsive (stacks on mobile).
-- **Bidirectional sync engine** — playing/scrubbing the video advances slides per the timing JSON; navigating slides (keyboard / wheel / click) seeks the video to that slide. A 🔗 toggle unlinks them.
+- **Flexible player layout** — slides + video with a **draggable divider** and **four layout modes** (split · slides-focus · video-focus · overlap picture-in-picture), animated transitions, **fullscreen**, and a responsive mobile stack. The divider ratio, mode, and PiP position/size persist across visits. See [Layout controls](#layout-controls).
+- **Bidirectional sync engine** — playing/scrubbing the video advances slides per the timing JSON; navigating slides (keyboard / wheel / click) seeks the video to that slide. A 🔗 toggle unlinks them. Sync keeps working in every layout mode.
+- **Subtitles / captions** — load `.vtt` **and** `.srt` (converted in-browser) tracks; native HTML5 `<track>` on mp4, a synced overlay on YouTube, with a **CC menu** to pick language / off. See [Subtitles](#subtitles).
 - **Pluggable deck adapters** — `html` (reveal.js-style / `<deck-stage>` web components, in an iframe) and `pdf` (rendered with pdf.js). Add more behind one interface.
-- **Pluggable video providers** — `youtube` (IFrame API) and `mp4` (HTML5 `<video>`). `webtorrent` + `ipfs` are phase-2 interface stubs.
+- **Pluggable video providers** with **source fallback** — `youtube` (IFrame API) and `mp4` (HTML5 `<video>`); list several sources and the player uses the first that loads. `webtorrent` + `ipfs` are phase-2 interface stubs that gracefully fall through.
 - **Modular slide transitions** — `cut` · `fade` · `slide` · `none`, in an extensible registry.
 - **Polished controls** — play/pause, scrub-to-seek, slide counter, playback speed (0.75–2×), keyboard + mouse-wheel navigation, accessible labels, reduced-motion aware.
+
+> **Manifest schema:** full reference in **[SPEC.md](SPEC.md)** with a validation [JSON Schema](docs/p2present.schema.json).
 
 ---
 
@@ -61,33 +64,78 @@ You can also point the **resolver** at any remote manifest without forking the p
 
 ## Manifest & timing schema
 
-A presentation is one `manifest.json`:
+A presentation is one `manifest.json`. The current **`p2present.json` v1.0** schema (full reference + examples in **[SPEC.md](SPEC.md)**, machine-readable [`docs/p2present.schema.json`](docs/p2present.schema.json)):
 
 ```jsonc
 {
+  "p2present": "1.0",
   "title": "My Talk",
-  "video": { "provider": "youtube", "src": "uYygWN1MZDE" },   // provider: youtube | mp4
-  "deck":  { "type": "html", "src": "slides/index.html" },     // type: html | pdf
-  "sync": [
+  "meta": { "author": "", "event": "", "date": "", "description": "" },
+  "video": {
+    "sources": [                                  // ordered fallback list
+      { "provider": "youtube", "src": "uYygWN1MZDE" },
+      { "provider": "mp4",     "src": "video/talk.mp4" }
+    ],
+    "poster": "video/poster.jpg"
+  },
+  "deck":  { "type": "html", "sources": [ { "src": "slides/index.html" } ], "slideCount": 23 },
+  "timing": [                                      // inline array, OR a string path to an external JSON file
     { "time": 0.0,  "slide": 1, "transition": "cut"  },
     { "time": 12.5, "slide": 2, "transition": "fade" }
-  ]
+  ],
+  "subtitles": [ { "lang": "en", "label": "English", "src": "subs/en.vtt", "default": true } ],
+  "resolvers": { "ipfsGateways": ["https://{cid}.ipfs.dweb.link"], "webtorrentTrackers": ["wss://tracker.openwebtorrent.com"] },
+  "layout": { "split": 0.6, "mode": "split", "transition": "fade" }
 }
 ```
 
-- **`video.src`** — for `youtube`, a video id or watch/`youtu.be` URL; for `mp4`, a URL to the file.
-- **`deck.src`** — relative to the manifest's location (so a forked or remote manifest resolves its own assets), or an absolute URL.
-- **`sync[]`** — one cue per slide boundary:
-  - **`time`** — float **seconds** (sub-second precision). You may also write an `"HH:MM:SS.mmm"` / `"MM:SS"` string; it's parsed to seconds.
-  - **`slide`** — **1-based** slide number.
-  - **`transition`** — `cut` | `fade` | `slide` | `none` (optional, defaults to `cut`).
-  - **`label`** — optional, for your own reference.
+Highlights (see **[SPEC.md](SPEC.md)** for every field):
 
-Cues are sorted by time automatically; the slide shown at any moment is the last cue whose `time` ≤ the video's current time.
+- **`video.sources`** — a fallback list; the player tries each until one loads (`youtube` + `mp4` work today; `webtorrent` + `ipfs` are phase-2 stubs that fall through). **`deck.sources`** is likewise a fallback list.
+- **`timing`** — one cue per slide boundary; either inline, or a **string path to an external JSON file**. Each cue: `time` (float **seconds**, or `"HH:MM:SS.mmm"` / `"MM:SS"`), **1-based** `slide`, optional `transition` (`cut` | `fade` | `slide` | `none`) and `label`. Cues are sorted by time; the slide shown is the last cue whose `time` ≤ the video's current time.
+- **`subtitles`** — `.vtt` / `.srt` caption tracks (see [Subtitles](#subtitles)).
+- **`resolvers`** — override IPFS gateways / WebTorrent trackers for the phase-2 providers.
+- **`layout`** — default split ratio + mode (see [Layout controls](#layout-controls)).
+- Relative `src` values (deck, mp4, subtitles, poster, external timing) resolve against the **manifest's own URL**.
 
-### Generate a starter `sync[]` — `import-chapters`
+> **Backward compatible.** The original v0 manifest (`video.provider`/`video.src`, `deck.src`, `sync[]`) still loads unchanged — see [SPEC.md → Backward compatibility](SPEC.md#backward-compatibility).
 
-Turn YouTube chapters or pasted timestamps into a `sync[]` array:
+---
+
+## Layout controls
+
+The control bar has a **layout-mode switcher** (and `m` cycles modes; `f` toggles fullscreen):
+
+| Mode | What it does |
+|------|--------------|
+| **Split** (`▥`) | Slides + video side by side, with a **draggable divider** — grab the handle between the panes to resize. |
+| **Slides focus** (`▢`) | Slides large, video small on the side. |
+| **Video focus** (`▣`) | Video large, slides small on the side. |
+| **Overlap** (`◳`) | Slides fill the stage; the video floats as a **draggable, resizable picture-in-picture** (drag its title bar, resize from the corner grip). |
+
+Mode changes animate smoothly, and keyboard / scroll / sync keep working in every mode. The divider ratio, current mode, and PiP geometry are saved to `localStorage` and restored on the next visit; the manifest's `layout.split` / `layout.mode` set the initial defaults. The `⛶` button (or `f`) takes the whole player fullscreen via the Fullscreen API.
+
+---
+
+## Subtitles
+
+Add caption tracks under `subtitles[]`:
+
+```jsonc
+"subtitles": [
+  { "lang": "en", "label": "English", "src": "subs/en.vtt", "format": "vtt", "default": true },
+  { "lang": "fa", "label": "فارسی",   "src": "subs/fa.srt", "format": "srt" }
+]
+```
+
+- Both **WebVTT** (`.vtt`) and **SubRip** (`.srt`) are accepted — `.srt` is converted to WebVTT in the browser at load. `format` is inferred from the extension if omitted.
+- For the **mp4** provider, tracks are attached as native HTML5 `<track kind="subtitles">` and rendered by the browser. For **YouTube** (whose iframe can't take external tracks), p2present renders a synced caption **overlay** driven by the sync clock.
+- A **CC** menu in the control bar picks the language or turns captions off; `"default": true` selects the track shown on load.
+- The bundled demo ships a couple of **sample** cues (clearly marked as samples) under `docs/content/demo/subtitles/` so the feature is demonstrable — replace them with a real transcript when you fork.
+
+### Generate a starter `timing[]` — `import-chapters`
+
+Turn YouTube chapters or pasted timestamps into a `timing[]` array:
 
 ```bash
 # From a yt-dlp .info.json (uses its "chapters" array):
@@ -149,19 +197,22 @@ The engine derives the active slide purely from `slideAtTime(videoTime)`. When t
 ## Project layout
 
 ```
+SPEC.md                   # canonical manifest schema reference
 docs/                     # ← GitHub Pages root (served as-is, no build)
   index.html  app.css     # resolver shell + chrome styles
+  p2present.schema.json   # JSON Schema for the v1.0 manifest
   .nojekyll               # keep! lets _ds/ assets through Pages
   src/
     main.js               # resolver: source → manifest → Player
-    player.js             # layout + controls + input
+    player.js             # layout modes + divider + fullscreen + controls + input
     sync.js               # bidirectional timeline engine
-    manifest.js  time.js  # load/validate; HH:MM:SS parser
+    subtitles.js          # vtt/srt parsing + caption rendering (track + overlay)
+    manifest.js  time.js  # load/validate (v0 + v1); HH:MM:SS parser
     registry.js           # generic plugin registry
     decks/   { base, index, html-deck, pdf-deck }
     video/   { base, index, youtube, mp4, webtorrent*, ipfs* }   (* phase-2 stub)
     transitions/ { index, cut, fade, slide, none }
-  content/demo/           # the bundled demo (deck + manifest)
+  content/demo/           # the bundled demo (deck + manifest + sample subtitles)
 scripts/import-chapters.mjs
 ```
 
