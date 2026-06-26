@@ -96,6 +96,7 @@ export class Player {
     this._bindInput();
     this._initDivider();
     this._initPip();
+    this._initAutoHide(controls);
     this.applyLayout();
     this.sync.start();
     return this;
@@ -489,13 +490,59 @@ export class Player {
 
   _updateFsButton() {
     if (!this.btnFs) return;
-    const on = document.fullscreenElement === this.root
-      || this.root.classList.contains('is-maximized');
+    const on = this._isImmersive();
     this.btnFs.classList.toggle('is-on', on);
     this.btnFs.setAttribute('aria-pressed', String(on));
     const title = on ? 'Exit fullscreen (f)' : 'Fullscreen (f)';
     this.btnFs.title = title;
     this.btnFs.setAttribute('aria-label', title);
+    this._updateImmersive();
+  }
+
+  // --- auto-hiding controls (fullscreen / maximized only) ------------------
+  // In immersive mode the control bar floats as a fixed overlay ON TOP of the
+  // content (it never resizes/reflows the slides or video) and fades out after
+  // ~2.5s of inactivity. Any pointer move, tap, or key press reveals it again.
+
+  _isImmersive() {
+    return document.fullscreenElement === this.root
+      || this.root.classList.contains('is-maximized');
+  }
+
+  _initAutoHide(controls) {
+    this.controlsBar = controls;
+    this._controlsHideTimer = null;
+    const HIDE_MS = 2500;
+    const reveal = () => {
+      if (!this._isImmersive()) return;
+      this.root.classList.add('p2-controls-visible');
+      clearTimeout(this._controlsHideTimer);
+      this._controlsHideTimer = setTimeout(
+        () => this.root.classList.remove('p2-controls-visible'), HIDE_MS);
+    };
+    this._revealControls = reveal;
+    this._onImmersiveActivity = () => reveal();
+    this.root.addEventListener('pointermove', this._onImmersiveActivity);
+    this.root.addEventListener('pointerdown', this._onImmersiveActivity);
+    this.root.addEventListener('keydown', this._onImmersiveActivity, true);
+    // Keep the bar up whenever the pointer rests on it.
+    controls.addEventListener('pointerenter', () => {
+      if (!this._isImmersive()) return;
+      clearTimeout(this._controlsHideTimer);
+      this.root.classList.add('p2-controls-visible');
+    });
+    controls.addEventListener('pointerleave', reveal);
+  }
+
+  _updateImmersive() {
+    const on = this._isImmersive();
+    this.root.classList.toggle('p2-immersive', on);
+    if (on) {
+      this._revealControls?.();       // show, then schedule the auto-hide
+    } else {
+      clearTimeout(this._controlsHideTimer);
+      this.root.classList.remove('p2-controls-visible');
+    }
   }
 
   // --- input ---------------------------------------------------------------
@@ -548,7 +595,8 @@ export class Player {
 
   destroy() {
     this.sync?.stop();
-    this.root.classList.remove('is-maximized');
+    clearTimeout(this._controlsHideTimer);
+    this.root.classList.remove('is-maximized', 'p2-immersive', 'p2-controls-visible');
     document.body.classList.remove('p2-maximized');
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('resize', this._onResize);

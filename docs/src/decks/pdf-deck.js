@@ -13,6 +13,7 @@ const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.w
 
 export class PdfDeckAdapter extends BaseDeckAdapter {
   async load() {
+    this.src = await this._resolveDeckSrc(/\.pdf$/i);  // magnet: → Blob URL
     const pdfjsLib = await import(/* @vite-ignore */ PDFJS_URL);
     pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
 

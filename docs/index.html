@@ -31,10 +31,11 @@
         type="text"
         inputmode="url"
         spellcheck="false"
-        placeholder="Paste a manifest URL (https://…/manifest.json) — magnet / IPFS coming in phase 2"
-        aria-label="Presentation source URL"
+        placeholder="Paste a source — https://…/p2present.json · ipfs://CID · magnet:?xt=…"
+        aria-label="Presentation source URL, IPFS CID, or magnet link"
       />
       <button type="submit" class="p2-load">Load</button>
+      <button type="button" class="p2-load p2-share" id="share-btn" title="Copy a shareable link to this presentation" aria-label="Copy a shareable link">🔗 Share</button>
     </form>
   </header>
 

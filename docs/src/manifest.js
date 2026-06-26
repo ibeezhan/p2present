@@ -1,6 +1,4 @@
-// manifest.js — load, validate, and normalise a presentation manifest.
-//
-// Two schema versions are accepted; both normalise to the same internal shape.
+// manifest.js — load, validate, and normalise a p2present.json v1 manifest.
 //
 // p2present.json v1.0 (canonical — see SPEC.md / docs/p2present.schema.json):
 // {
@@ -15,53 +13,65 @@
 //   "layout": { "split":0.6, "mode":"split", "transition":"fade" }
 // }
 //
-// v0 (legacy — still supported):
-// {
-//   "title": "...",
-//   "video": { "provider": "youtube|mp4", "src": "<id-or-url>" },
-//   "deck":  { "type": "html|pdf", "src": "slides/index.html" },
-//   "sync":  [ { "time": 0.0, "slide": 1, "transition": "cut" }, ... ]
-// }
-//
 // `time` may be a float (seconds) or an "HH:MM:SS.mmm" string; we normalise it
-// to float seconds. Relative `src` paths resolve against the manifest URL so
-// content can live on any remote host (the resolver use case).
+// to float seconds. A source (the manifest itself, the deck, the video, assets)
+// may be a plain https URL, an ipfs:// CID, or a magnet: link — see resolve.js.
+// Relative `src` paths resolve against the manifest URL so content can live on
+// any remote host (the resolver use case).
 
 import { parseTime } from './time.js';
+import {
+  DEFAULT_IPFS_GATEWAYS, DEFAULT_WEBTORRENT_TRACKERS,
+  isHttp, isIpfs, isMagnet, ipfsGatewayUrls, fetchFirstOk, webtorrentText,
+} from './resolve.js';
 
-const DEFAULT_IPFS_GATEWAYS = [
-  'https://{cid}.ipfs.dweb.link',
-  'https://ipfs.io/ipfs/{cid}',
-  'https://cloudflare-ipfs.com/ipfs/{cid}',
-];
-const DEFAULT_WEBTORRENT_TRACKERS = [
-  'wss://tracker.openwebtorrent.com',
-  'wss://tracker.webtorrent.dev',
-];
 const LAYOUT_MODES = ['split', 'slides-focus', 'video-focus', 'overlap'];
 
 /**
- * Fetch + parse + normalise a manifest from a URL.
- * Resolves an external `timing` file if the manifest points to one.
- * @param {string} url absolute or relative URL to a manifest.json
- * @returns {Promise<object>} normalised manifest with absolute asset URLs
+ * Load a whole presentation from a *source* — which may be:
+ *   - an inline manifest object (already parsed),
+ *   - an https URL to a p2present.json,
+ *   - an ipfs:// CID (resolved through gateways),
+ *   - a magnet: link (the .json is fetched from the swarm).
+ * Sibling assets resolve against wherever the manifest was found.
+ * @returns {Promise<object>} normalised manifest with resolved asset URLs
  */
-export async function loadManifest(url) {
-  const manifestUrl = new URL(url, window.location.href).href;
-  const raw = await fetchJson(manifestUrl, 'manifest');
+export async function loadPresentation(source) {
+  if (source && typeof source === 'object') {
+    return normaliseManifest(source, window.location.href);
+  }
+  const s = String(source ?? '').trim();
+  if (!s) throw new Error('No presentation source given.');
 
-  // `timing` may be an inline array OR a string path to an external JSON file.
+  let raw, baseUrl;
+  if (isMagnet(s)) {
+    raw = JSON.parse(await webtorrentText(s, {
+      trackers: DEFAULT_WEBTORRENT_TRACKERS, matchRe: /\.json$/i,
+    }));
+    // A magnet-hosted manifest can't resolve relative siblings — its assets must
+    // be absolute / ipfs: / magnet:. Base stays the page so absolutes pass through.
+    baseUrl = window.location.href;
+  } else if (isIpfs(s)) {
+    const { res, url } = await fetchFirstOk(
+      ipfsGatewayUrls(s, DEFAULT_IPFS_GATEWAYS), 'manifest (ipfs)');
+    raw = await res.json();
+    baseUrl = url; // sibling assets resolve through the same gateway
+  } else {
+    baseUrl = new URL(s, window.location.href).href;
+    raw = await fetchJson(baseUrl, 'manifest');
+  }
+
+  // `timing` may be an inline array OR a string path/URI to an external JSON file.
   if (typeof raw.timing === 'string') {
-    const timingUrl = new URL(raw.timing, manifestUrl).href;
-    let timing = await fetchJson(timingUrl, 'timing file');
+    let timing = await fetchJsonFrom(raw.timing, baseUrl, 'timing file');
     if (timing && !Array.isArray(timing) && Array.isArray(timing.timing)) timing = timing.timing;
     if (!Array.isArray(timing)) {
-      throw new Error(`External timing file must be a JSON array (or {"timing":[…]}): ${timingUrl}`);
+      throw new Error('External timing file must be a JSON array (or {"timing":[…]}).');
     }
     raw.timing = timing;
   }
 
-  return normaliseManifest(raw, manifestUrl);
+  return normaliseManifest(raw, baseUrl);
 }
 
 async function fetchJson(fetchUrl, what) {
@@ -80,8 +90,22 @@ async function fetchJson(fetchUrl, what) {
   }
 }
 
+// Fetch JSON from a child reference that may itself be http(s)/ipfs/magnet.
+async function fetchJsonFrom(src, baseUrl, what) {
+  if (isMagnet(src)) {
+    return JSON.parse(await webtorrentText(src, {
+      trackers: DEFAULT_WEBTORRENT_TRACKERS, matchRe: /\.json$/i,
+    }));
+  }
+  if (isIpfs(src)) {
+    const { res } = await fetchFirstOk(ipfsGatewayUrls(src), what);
+    return res.json();
+  }
+  return fetchJson(new URL(src, baseUrl).href, what);
+}
+
 /**
- * Validate + normalise a raw manifest object (v0 or v1) into the internal shape.
+ * Validate + normalise a raw v1 manifest object into the internal shape.
  * @param {object} raw
  * @param {string} baseUrl URL the manifest was loaded from (for resolving src)
  * @returns {object}
@@ -91,97 +115,88 @@ export function normaliseManifest(raw, baseUrl = window.location.href) {
   if (!raw.video || typeof raw.video !== 'object') throw new Error('Manifest.video is required.');
   if (!raw.deck || typeof raw.deck !== 'object') throw new Error('Manifest.deck is required.');
 
-  const version = raw.p2present ? String(raw.p2present)
-    : (Array.isArray(raw.video.sources) || raw.timing !== undefined) ? '1.0' : '0';
-
-  // --- video: normalise to an ordered fallback list of sources ---
-  const videoSources = normaliseVideoSources(raw.video, baseUrl);
-  if (!videoSources.length) {
-    throw new Error('Manifest.video needs at least one source (provider + src).');
-  }
-  const poster = raw.video.poster ? resolveSrc(raw.video.poster, baseUrl) : undefined;
-
-  // --- deck: normalise to an ordered fallback list of source URLs ---
-  if (!raw.deck.type) throw new Error('Manifest.deck.type is required.');
-  const deckSources = normaliseDeckSources(raw.deck, baseUrl);
-  if (!deckSources.length) {
-    throw new Error('Manifest.deck needs at least one source (src).');
-  }
-  const slideCount = Number.isFinite(Number(raw.deck.slideCount))
-    ? Math.floor(Number(raw.deck.slideCount)) : undefined;
-
-  // --- timing / sync cues (inline array; external files resolved in loadManifest) ---
-  const rawCues = Array.isArray(raw.timing) ? raw.timing
-    : Array.isArray(raw.sync) ? raw.sync : [];
-  const sync = rawCues.map((cue, i) => normaliseCue(cue, i)).sort((a, b) => a.time - b.time);
-
-  // --- subtitles ---
-  const subtitles = (Array.isArray(raw.subtitles) ? raw.subtitles : [])
-    .map((s, i) => normaliseSubtitle(s, i, baseUrl))
-    .filter(Boolean);
-
-  // --- resolvers (override defaults the phase-2 providers consume) ---
+  // --- resolvers (gateways/trackers drive ipfs:// + magnet: src resolution) ---
   const resolvers = {
     ipfsGateways: arrayOfStrings(raw.resolvers?.ipfsGateways) || DEFAULT_IPFS_GATEWAYS,
     webtorrentTrackers: arrayOfStrings(raw.resolvers?.webtorrentTrackers) || DEFAULT_WEBTORRENT_TRACKERS,
   };
+  const gateways = resolvers.ipfsGateways;
 
-  // --- layout ---
-  const layout = normaliseLayout(raw.layout);
+  // --- video: ordered fallback list of sources ---
+  const videoSources = normaliseVideoSources(raw.video, baseUrl, gateways);
+  if (!videoSources.length) {
+    throw new Error('Manifest.video.sources needs at least one {provider, src}.');
+  }
+  const poster = raw.video.poster ? resolveSrc(raw.video.poster, baseUrl, gateways) : undefined;
 
-  // --- meta ---
-  const meta = {
-    author: str(raw.meta?.author),
-    event: str(raw.meta?.event),
-    date: str(raw.meta?.date),
-    description: str(raw.meta?.description),
-  };
+  // --- deck: ordered fallback list of source URLs ---
+  if (!raw.deck.type) throw new Error('Manifest.deck.type is required.');
+  const deckSources = normaliseDeckSources(raw.deck, baseUrl, gateways);
+  if (!deckSources.length) {
+    throw new Error('Manifest.deck.sources needs at least one {src}.');
+  }
+  const slideCount = Number.isFinite(Number(raw.deck.slideCount))
+    ? Math.floor(Number(raw.deck.slideCount)) : undefined;
+
+  // --- timing cues (inline; external files already resolved in loadPresentation) ---
+  const rawCues = Array.isArray(raw.timing) ? raw.timing : [];
+  const sync = rawCues.map((cue, i) => normaliseCue(cue, i)).sort((a, b) => a.time - b.time);
+
+  // --- subtitles ---
+  const subtitles = (Array.isArray(raw.subtitles) ? raw.subtitles : [])
+    .map((s, i) => normaliseSubtitle(s, i, baseUrl, gateways))
+    .filter(Boolean);
 
   return {
-    version,
     title: typeof raw.title === 'string' ? raw.title : 'Untitled presentation',
-    meta,
+    meta: {
+      author: str(raw.meta?.author),
+      event: str(raw.meta?.event),
+      date: str(raw.meta?.date),
+      description: str(raw.meta?.description),
+    },
     video: { sources: videoSources, poster },
     deck: { type: String(raw.deck.type), sources: deckSources, slideCount, ...stripKnownDeck(raw.deck) },
     sync,
     subtitles,
     resolvers,
-    layout,
+    layout: normaliseLayout(raw.layout),
     baseUrl,
     _raw: raw,
   };
 }
 
-function normaliseVideoSources(video, baseUrl) {
-  let list;
-  if (Array.isArray(video.sources)) {
-    list = video.sources;
-  } else if (video.provider && video.src != null) {
-    list = [{ provider: video.provider, src: video.src }];
-  } else {
-    list = [];
-  }
+function normaliseVideoSources(video, baseUrl, gateways) {
+  const list = Array.isArray(video.sources) ? video.sources : [];
   return list
     .filter((s) => s && s.provider && s.src != null)
-    .map((s) => ({
-      provider: String(s.provider),
-      // mp4 (and other file-based) srcs resolve against the base; ids/magnets/cids stay verbatim.
-      src: s.provider === 'mp4' ? resolveSrc(String(s.src), baseUrl) : String(s.src),
-    }));
+    .map((s) => {
+      const provider = String(s.provider);
+      // mp4 (file-based) resolves http/ipfs/relative; youtube ids, magnets and
+      // ipfs CIDs for the p2p providers stay verbatim (the provider resolves them).
+      const src = provider === 'mp4'
+        ? resolveSrc(String(s.src), baseUrl, gateways)
+        : String(s.src);
+      return { provider, src };
+    });
 }
 
-function normaliseDeckSources(deck, baseUrl) {
-  let list;
-  if (Array.isArray(deck.sources)) {
-    list = deck.sources;
-  } else if (deck.src != null) {
-    list = [{ src: deck.src }];
-  } else {
-    list = [];
+function normaliseDeckSources(deck, baseUrl, gateways) {
+  const list = Array.isArray(deck.sources) ? deck.sources : [];
+  const out = [];
+  for (const s of list) {
+    if (!s || s.src == null) continue;
+    const src = String(s.src);
+    if (isIpfs(src)) {
+      // Expand into one fallback entry per gateway so the deck loader tries each.
+      for (const u of ipfsGatewayUrls(src, gateways)) out.push({ src: u });
+    } else if (isMagnet(src)) {
+      out.push({ src }); // the deck adapter fetches a Blob URL from the swarm
+    } else {
+      out.push({ src: resolveSrc(src, baseUrl, gateways) });
+    }
   }
-  return list
-    .filter((s) => s && s.src != null)
-    .map((s) => ({ src: resolveSrc(String(s.src), baseUrl) }));
+  return out;
 }
 
 function normaliseCue(cue, i) {
@@ -198,9 +213,9 @@ function normaliseCue(cue, i) {
   };
 }
 
-function normaliseSubtitle(s, i, baseUrl) {
+function normaliseSubtitle(s, i, baseUrl, gateways) {
   if (!s || typeof s !== 'object' || !s.src) return null;
-  const src = resolveSrc(String(s.src), baseUrl);
+  const src = resolveSrc(String(s.src), baseUrl, gateways);
   let format = s.format ? String(s.format).toLowerCase() : '';
   if (format !== 'vtt' && format !== 'srt') {
     format = /\.srt(\?|#|$)/i.test(src) ? 'srt' : 'vtt';
@@ -223,10 +238,14 @@ function normaliseLayout(layout = {}) {
   return { split, mode, transition };
 }
 
-// Resolve a src that looks like a path/URL; leave bare tokens (ids) untouched.
-function resolveSrc(src, baseUrl) {
+// Resolve a src to a fetchable URL. ipfs:// → primary gateway URL; magnet: left
+// for the provider/deck-adapter to fetch from the swarm; bare tokens (a YouTube
+// id) untouched; everything else resolved against the manifest's base URL.
+function resolveSrc(src, baseUrl, gateways) {
   if (typeof src !== 'string') return src;
-  if (/^[a-z]+:\/\//i.test(src) || src.startsWith('/') || src.startsWith('./') ||
+  if (isMagnet(src)) return src;
+  if (isIpfs(src)) return ipfsGatewayUrls(src, gateways)[0];
+  if (isHttp(src) || src.startsWith('/') || src.startsWith('./') ||
       src.includes('/') || /\.[a-z0-9]+$/i.test(src)) {
     return new URL(src, baseUrl).href;
   }

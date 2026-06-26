@@ -17,6 +17,7 @@ import { BaseDeckAdapter } from './base.js';
 
 export class HtmlDeckAdapter extends BaseDeckAdapter {
   async load() {
+    this.src = await this._resolveDeckSrc(/\.html?$/i);  // magnet: → Blob URL
     const iframe = document.createElement('iframe');
     iframe.className = 'p2-deck-frame';
     iframe.setAttribute('title', this.manifest?.title || 'Slides');

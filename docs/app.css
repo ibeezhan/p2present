@@ -57,6 +57,9 @@ body {
 }
 .p2-load:hover, .p2-btn:hover { border-color: var(--accent); color: var(--accent); }
 .p2-load { font-weight: 600; }
+.p2-share { white-space: nowrap; }
+.p2-share:disabled { opacity: 0.45; cursor: default; }
+.p2-share:disabled:hover { border-color: var(--line); color: var(--fg); }
 
 .p2-status { margin: 0; padding: 0 16px; min-height: 0; color: var(--muted); font-size: 13px; }
 .p2-status:empty { display: none; }
@@ -232,6 +235,36 @@ body {
            max(8px, env(safe-area-inset-left));
 }
 body.p2-maximized { overflow: hidden; }
+
+/* --- immersive (fullscreen / maximized): auto-hiding overlay controls ---
+   The control bar is lifted OUT of the flow into a fixed overlay pinned to the
+   bottom of the player, so showing/hiding it never resizes or reflows the slides
+   or video. It fades out after ~2.5s of inactivity and back in on any activity
+   (driven by .p2-controls-visible from player.js). */
+.p2-player.p2-immersive .p2-controls {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 10000;
+  background: rgba(21, 24, 29, 0.92);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.p2-player.p2-immersive.p2-controls-visible .p2-controls {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+/* Hide the OS cursor with the bar so immersive playback is truly clean. */
+.p2-player.p2-immersive:not(.p2-controls-visible) { cursor: none; }
+@media (prefers-reduced-motion: reduce) {
+  .p2-player.p2-immersive .p2-controls { transition: opacity .15s linear; transform: none; }
+}
 
 .p2-empty {
   margin: auto; color: var(--muted); text-align: center; padding: 40px;

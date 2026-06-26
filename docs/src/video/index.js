@@ -30,6 +30,6 @@ export { BaseVideoProvider };
 export const videoProviders = new Registry('video provider');
 videoProviders.register('youtube', YouTubeProvider);
 videoProviders.register('mp4', Mp4Provider);
-// Phase 2 — interface-only stubs (see files for TODOs):
-videoProviders.register('webtorrent', WebTorrentProvider);
-videoProviders.register('ipfs', IpfsProvider);
+// Phase 2 — decentralized providers (stream over the P2P / content-addressed web):
+videoProviders.register('webtorrent', WebTorrentProvider);  // magnet: → file.renderTo(<video>)
+videoProviders.register('ipfs', IpfsProvider);              // ipfs:// → gateway fallback
