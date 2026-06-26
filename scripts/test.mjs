@@ -11,6 +11,10 @@ import {
   encodeBase64, decodeBase64, DEFAULT_IPFS_GATEWAYS,
 } from '../docs/src/resolve.js';
 import { normaliseManifest } from '../docs/src/manifest.js';
+import { validate } from '../docs/src/schema-validate.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 let passed = 0;
 const tests = [];
@@ -144,6 +148,47 @@ test('normalise: rejects missing video/deck', () => {
 });
 test('normalise: rejects empty sources', () => {
   assert.throws(() => normaliseManifest({ video: { sources: [] }, deck: { type: 'html', sources: [{ src: 'a' }] } }, BASE), /video\.sources/);
+});
+
+// --- schema validation (builder) -------------------------------------------
+const SCHEMA = JSON.parse(readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../docs/p2present.schema.json'), 'utf-8'));
+const minimalValid = {
+  p2present: '1.0', title: 'T',
+  video: { sources: [{ provider: 'youtube', src: 'abc' }] },
+  deck: { type: 'html', sources: [{ src: 'slides/index.html' }] },
+  timing: [{ time: 0, slide: 1 }],
+};
+test('schema: a minimal valid manifest passes', () => {
+  assert.ok(validate(minimalValid, SCHEMA).valid);
+});
+test('schema: missing video/deck flagged', () => {
+  const r = validate({ p2present: '1.0' }, SCHEMA);
+  assert.ok(!r.valid);
+  assert.ok(r.errors.some((e) => /video/.test(e.path)));
+  assert.ok(r.errors.some((e) => /deck/.test(e.path)));
+});
+test('schema: bad provider enum flagged', () => {
+  const m = JSON.parse(JSON.stringify(minimalValid));
+  m.video.sources[0].provider = 'vimeo';
+  const r = validate(m, SCHEMA);
+  assert.ok(!r.valid);
+  assert.ok(r.errors.some((e) => /provider/.test(e.path) && /one of/.test(e.message)));
+});
+test('schema: empty video.sources flagged (minItems)', () => {
+  const m = JSON.parse(JSON.stringify(minimalValid));
+  m.video.sources = [];
+  assert.ok(!validate(m, SCHEMA).valid);
+});
+test('schema: timing accepts inline array OR string (oneOf)', () => {
+  assert.ok(validate({ ...minimalValid, timing: 'timing.json' }, SCHEMA).valid);
+  assert.ok(validate({ ...minimalValid, timing: [{ slide: 2 }] }, SCHEMA).valid);
+});
+test('schema: deck.thumbnails accepts both shapes', () => {
+  const a = { ...minimalValid, deck: { ...minimalValid.deck, thumbnails: ['a.png', 'b.png'] } };
+  const b = { ...minimalValid, deck: { ...minimalValid.deck, thumbnails: [{ slide: 1, src: 'a.png' }] } };
+  assert.ok(validate(a, SCHEMA).valid);
+  assert.ok(validate(b, SCHEMA).valid);
 });
 
 // --- runner ----------------------------------------------------------------

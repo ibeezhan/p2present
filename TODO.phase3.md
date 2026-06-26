@@ -22,12 +22,12 @@ Living checklist for the phase-3 overnight job. Status legend: ⬜ todo · 🔄 
 - ✅ Smoke: scrubber thumbnail appears, deep-link opens correct time/slide
 
 ## 1. Manifest builder / editor UI (new page `docs/builder/`)
-- ⬜ Form: title/meta, video.sources[] rows, deck (type + sources[]), timing rows, subtitles[], resolvers, layout
-- ⬜ Live JSON preview + schema validation against `docs/p2present.schema.json`
-- ⬜ Download / Copy JSON / Open in player (?src=base64)
-- ⬜ Load-existing: paste/upload a manifest to edit
-- ⬜ Timing-capture helper (stamp current video time → current slide)
-- ⬜ Smoke: builder validates + exports
+- ✅ Form: title/meta, video.sources[] rows, deck (type + sources[]), timing rows, subtitles[], resolvers, layout
+- ✅ Live JSON preview + schema validation against `docs/p2present.schema.json`
+- ✅ Download / Copy JSON / Open in player (?src=base64)
+- ✅ Load-existing: paste/upload a manifest to edit
+- ✅ Timing-capture helper (stamp current video time → current slide)
+- ✅ Smoke: builder validates + exports
 
 ## 2. IPFS upload + WebTorrent seed helper (new page `docs/host/`) + HOSTING.md
 - ⬜ IPFS client-side upload via user-configured token (web3.storage/Storacha + Pinata), token in localStorage only
