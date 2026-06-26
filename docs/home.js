@@ -104,6 +104,56 @@ function initDeckCycle() {
 }
 
 /* ============================================================= *
+ *  2b. HERO SCROLL-ORBIT — the two peer "planet" dots           *
+ * ============================================================= */
+// Two glowing dots (cyan + magenta) ride the brand ring in the hero. The ring
+// ellipse was fitted from logo-hero-base.png in its native 1254×1254 space
+// (perimeter brightness hit-ratio 1.000), so positions drop straight into the
+// overlaid SVG's viewBox. Scroll drives the orbit angle (eased so velocity reads
+// smoothly); a faint idle drift keeps it alive at rest. Reduced motion → static.
+function initHeroOrbit() {
+  const orbit = document.querySelector('.hero-orbit');
+  const dotA = orbit?.querySelector('.planet-cyan');
+  const dotB = orbit?.querySelector('.planet-magenta');
+  if (!orbit || !dotA || !dotB) return;
+
+  const CX = 643.55, CY = 615.34, AX = 338.40, AY = 567.26;
+  const PHI = (62.20 * Math.PI) / 180, CP = Math.cos(PHI), SP = Math.sin(PHI);
+  const place = (dot, t) => {
+    const c = Math.cos(t), s = Math.sin(t);
+    dot.setAttribute('cx', (CX + AX * c * CP - AY * s * SP).toFixed(1));
+    dot.setAttribute('cy', (CY + AX * c * SP + AY * s * CP).toFixed(1));
+  };
+
+  // static dots on opposite ends of the ring under reduced motion (no rAF loop)
+  if (reduceMotion) { place(dotA, 0); place(dotB, Math.PI); return; }
+
+  const K = (2 * Math.PI) / 1300;     // one full orbit per ~1300px of scroll
+  let angle = 0, last = performance.now(), running = false;
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(64, now - last); last = now;
+    const target = window.scrollY * K;             // scroll position → target angle
+    angle += (target - angle) * Math.min(1, dt / 140); // ease toward it (smooth)
+    const idle = now * 0.00006;                     // faint always-on drift
+    place(dotA, angle + idle);
+    place(dotB, angle + idle + Math.PI);
+    requestAnimationFrame(frame);
+  }
+  const start = () => { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); };
+  const stop = () => { running = false; };
+  start();
+
+  // idle the loop when the hero is off-screen or the tab is hidden
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  const hero = document.querySelector('.hero');
+  if (hero && 'IntersectionObserver' in window) {
+    new IntersectionObserver((es) => (es[0].isIntersecting && !document.hidden ? start() : stop()),
+      { threshold: 0 }).observe(hero);
+  }
+}
+
+/* ============================================================= *
  *  3. REVEALS                                                   *
  * ============================================================= */
 function initReveals() {
@@ -201,6 +251,7 @@ function initPicker() {
  * ============================================================= */
 function boot() {
   initSmoothScroll();
+  initHeroOrbit();
   initReveals();
   initDeckCycle();
   wireCaptionJumps();
