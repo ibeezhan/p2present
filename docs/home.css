@@ -1,0 +1,186 @@
+/* home.css — the p2present landing page. Self-contained (shares the app's dark
+   palette + system font so the home and player feel like one product). */
+:root {
+  --bg: #0d0f12;
+  --panel: #15181d;
+  --panel-2: #1c2026;
+  --line: #2a2f37;
+  --fg: #e8eaed;
+  --muted: #9aa3ad;
+  --accent: #4fd1c5;
+  --accent-dim: #2a6f69;
+  --radius: 12px;
+  --maxw: 1080px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; }
+.muted { color: var(--muted); }
+
+/* --- top bar --- */
+.top {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 20px;
+  background: rgba(13, 15, 18, 0.82);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: .2px; }
+.brand .logo { font-size: 22px; }
+.top nav { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.top nav a {
+  color: var(--fg); font-size: 14px; padding: 6px 12px;
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.top nav a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.top nav a.cta { background: var(--accent); color: #06201d; border-color: var(--accent); font-weight: 700; }
+.top nav a.cta:hover { background: #6fe0d6; color: #06201d; }
+
+/* --- buttons --- */
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 13px 22px; border-radius: 999px; font-size: 16px; font-weight: 700;
+  border: 1px solid var(--line); color: var(--fg); cursor: pointer;
+}
+.btn:hover { text-decoration: none; }
+.btn-primary { background: var(--accent); color: #06201d; border-color: var(--accent); }
+.btn-primary:hover { background: #6fe0d6; box-shadow: 0 8px 28px rgba(79, 209, 197, .25); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* --- hero --- */
+.hero { padding: 64px 0 40px; }
+.hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+.hero h1 { font-size: clamp(38px, 6vw, 62px); letter-spacing: -1px; }
+.hero h1 .dot { color: var(--accent); }
+.hero .tagline { font-size: clamp(18px, 2.4vw, 22px); color: var(--fg); max-width: 36ch; }
+.hero .sub { color: var(--muted); max-width: 46ch; margin-top: 14px; }
+.hero .actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
+.hero .note { margin-top: 16px; font-size: 13px; color: var(--muted); }
+
+/* --- looping visual: a CSS-only mock of the split player --- */
+.demo-frame {
+  position: relative; aspect-ratio: 16 / 10;
+  background: linear-gradient(160deg, #12151a, #0b0d10);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(0,0,0,.5); overflow: hidden;
+}
+.demo-stage { position: absolute; inset: 12px 12px 46px; display: flex; gap: 10px; }
+.demo-pane { position: relative; flex: 1; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #000; }
+.demo-pane .label {
+  position: absolute; top: 7px; left: 9px; z-index: 3;
+  font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  background: rgba(0,0,0,.5); padding: 2px 7px; border-radius: 5px;
+}
+/* slide pane: stacked "slides" cross-fading in a loop */
+.demo-slide { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; animation: slideCycle 12s infinite; }
+.demo-slide .card { width: 74%; text-align: center; }
+.demo-slide .bar { height: 9px; border-radius: 5px; background: var(--panel-2); margin: 8px auto; }
+.demo-slide .bar.t { width: 64%; height: 13px; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); }
+.demo-slide .bar.a { width: 86%; } .demo-slide .bar.b { width: 72%; } .demo-slide .bar.c { width: 80%; }
+.demo-slide:nth-child(1) { animation-delay: 0s; background: linear-gradient(140deg,#171b22,#0f1216); }
+.demo-slide:nth-child(2) { animation-delay: 4s; background: linear-gradient(140deg,#1a1420,#0f1216); }
+.demo-slide:nth-child(3) { animation-delay: 8s; background: linear-gradient(140deg,#141d1c,#0f1216); }
+@keyframes slideCycle { 0%,28%{opacity:1} 33%,100%{opacity:0} }
+/* video pane: a soft pulsing "play" puck + a moving scanline */
+.demo-video { background: radial-gradient(120% 90% at 50% 40%, #15212a, #07090c); }
+.demo-video .play {
+  position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(79,209,197,.16); display: grid; place-items: center; color: var(--accent);
+  font-size: 22px; animation: pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.08);opacity:1} }
+.demo-cc {
+  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
+  background: rgba(0,0,0,.7); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 5px; white-space: nowrap;
+}
+/* control bar with a scrubbing progress fill */
+.demo-bar { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 22px; display: flex; align-items: center; gap: 8px; }
+.demo-bar .glyph { color: var(--accent); font-size: 11px; }
+.demo-track { flex: 1; height: 5px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.demo-track::after { content: ""; display: block; height: 100%; width: 30%; background: var(--accent); animation: scrub 12s linear infinite; }
+@keyframes scrub { from{width:2%} to{width:100%} }
+@media (prefers-reduced-motion: reduce) {
+  .demo-slide, .demo-video .play, .demo-track::after { animation: none; }
+  .demo-slide:nth-child(1) { opacity: 1; } .demo-track::after { width: 42%; }
+}
+
+/* --- generic sections --- */
+section { padding: 56px 0; border-top: 1px solid var(--line); }
+.section-head { max-width: 60ch; margin-bottom: 32px; }
+.section-head h2 { font-size: clamp(26px, 3.4vw, 34px); }
+.section-head p { color: var(--muted); margin: 0; }
+.eyebrow { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 10px; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.step .num { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--panel-2); border: 1px solid var(--accent-dim); color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+.step h3 { font-size: 18px; }
+.step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+/* features grid */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.feat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.feat .ico { font-size: 22px; }
+.feat h3 { font-size: 16px; margin: 10px 0 6px; }
+.feat p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* open-source band */
+.os { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+.os .pills { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.os .pills a { padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg); font-size: 14px; }
+.os .pills a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.code {
+  background: #0a0c0f; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; color: #cdd3da; overflow-x: auto;
+}
+.code .c { color: var(--muted); } .code .k { color: var(--accent); }
+
+/* roadmap / hosted+registry */
+.plan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.plan-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; position: relative; }
+.plan-card h3 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.plan-card ul { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+.plan-card li { margin: 6px 0; }
+.tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+.tag.coming { background: rgba(79,209,197,.14); color: var(--accent); border: 1px solid var(--accent-dim); }
+.tag.roadmap { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.ethos {
+  margin-top: 28px; padding: 18px 22px; border-radius: var(--radius);
+  background: linear-gradient(140deg, rgba(79,209,197,.08), transparent);
+  border: 1px solid var(--accent-dim); color: var(--fg);
+}
+.ethos strong { color: var(--accent); }
+
+/* final CTA */
+.cta-band { text-align: center; }
+.cta-band .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+
+/* footer */
+footer.site { border-top: 1px solid var(--line); padding: 30px 0; color: var(--muted); font-size: 14px; }
+footer.site .cols { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; }
+footer.site a { color: var(--muted); }
+footer.site a:hover { color: var(--accent); }
+footer.site .spacer { flex: 1; }
+
+/* --- responsive --- */
+@media (max-width: 860px) {
+  .hero-grid, .os { grid-template-columns: 1fr; gap: 32px; }
+  .hero { padding: 40px 0 24px; }
+  .steps, .features, .plan { grid-template-columns: 1fr; }
+}
+@media (min-width: 561px) and (max-width: 860px) {
+  .features { grid-template-columns: 1fr 1fr; }
+}

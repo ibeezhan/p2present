@@ -7,16 +7,18 @@ p2present is a tiny, dependency-light, **static** site (no server runtime). It h
 1. **Resolver host** — a landing page with a source box. Paste a remote presentation **source** — an `https://…/p2present.json`, an **`ipfs://` CID**, or a **`magnet:` link** — and it fetches the manifest + assets (over whichever transport) and renders the synced player. Content can live anywhere, including the decentralized web.
 2. **Forkable self-host template** — fork the repo, drop your own slides + video + timing JSON into `docs/content/`, enable GitHub Pages, and you have your own instance.
 
-**▶ Live demo:** https://ibeezhan.github.io/p2present/
+**▶ Home:** https://ibeezhan.github.io/p2present/ — the landing page. The player lives at **[`/app/`](https://ibeezhan.github.io/p2present/app/)**.
 
-The demo loads by default: the *"Rage-Coding the Mother of All VPNs"* deck (23 slides) synced to its [YouTube talk](https://www.youtube.com/watch?v=uYygWN1MZDE). The same talk also ships as a **PDF-deck** demo that exercises the pdf.js adapter:
+The "Load the MoaV demo" button opens the *"Rage-Coding the Mother of All VPNs"* deck (23 slides) synced to its [YouTube talk](https://www.youtube.com/watch?v=uYygWN1MZDE). The same talk also ships as a **PDF-deck** demo that exercises the pdf.js adapter:
 
 | | |
 |---|---|
-| **[HTML deck demo](https://ibeezhan.github.io/p2present/?p=demo)** | `<deck-stage>` web-component slides in an iframe |
-| **[PDF deck demo](https://ibeezhan.github.io/p2present/?p=moav-pdf)** | the same slides rendered from a PDF with pdf.js |
+| **[HTML deck demo](https://ibeezhan.github.io/p2present/app/?p=demo)** | `<deck-stage>` web-component slides in an iframe |
+| **[PDF deck demo](https://ibeezhan.github.io/p2present/app/?p=moav-pdf)** | the same slides rendered from a PDF with pdf.js |
 | **[🛠 Builder](https://ibeezhan.github.io/p2present/builder/)** | assemble a `p2present.json` visually (live preview + schema validation) |
 | **[📤 Host helper](https://ibeezhan.github.io/p2present/host/)** | pin a file to IPFS / seed a WebTorrent in the browser |
+
+> Legacy player links on the root (`/?p=…`, `/?src=…`, `/?manifest=…`, `/?demo`) auto-redirect to `/app/`, so older shared links keep working.
 
 ### Documentation
 
@@ -24,6 +26,7 @@ The demo loads by default: the *"Rage-Coding the Mother of All VPNs"* deck (23 s
 - **[AUTHORING.md](AUTHORING.md)** — make a presentation start-to-finish: slides → host assets → build the manifest → share.
 - **[HOSTING.md](HOSTING.md)** — where to put your assets (plain URLs, IPFS, WebTorrent) and how each maps to a manifest entry.
 - **[DOCS.md](DOCS.md)** — a one-page index of everything above.
+- **[ROADMAP.md](ROADMAP.md)** — what's next: community manifest hosting, paid persistence (Arweave pay-once + pinning/seedboxes), and an ENS/EAS verified registry. Open core, free forever.
 
 ---
 
@@ -122,7 +125,7 @@ The whole site is served from the **`docs/`** folder on GitHub Pages — no buil
 
 > ⚠️ **Keep the `docs/.nojekyll` file.** GitHub Pages runs Jekyll by default, which ignores files/folders that start with `_` (the demo deck ships a `_ds/` design-system folder). `.nojekyll` disables that.
 
-You can also point the **resolver** at any remote manifest without forking the player: `https://ibeezhan.github.io/p2present/?manifest=https://your-host.example/p2present.json` (or an `ipfs://` / `magnet:` source). For cross-host `https`, the remote host must send permissive **CORS** headers for the JSON and assets.
+You can also point the **resolver** at any remote manifest without forking the player: `https://ibeezhan.github.io/p2present/app/?manifest=https://your-host.example/p2present.json` (or an `ipfs://` / `magnet:` source). For cross-host `https`, the remote host must send permissive **CORS** headers for the JSON and assets.
 
 ---
 
@@ -204,16 +207,19 @@ The resolver host decides what to load from the URL query — **first match wins
 | `?src=<base64>` | base64-decoded value is **either** an inline `p2present.json` **or** a source URL/CID/magnet (auto-detected). The compact, self-contained share format. |
 | `?manifest=<url>` | a `p2present.json` from any transport (`https` / `ipfs://` / `magnet:`). |
 | `?p=<name>` | a bundled local manifest at `content/<name>/manifest.json` shipped in your fork. |
-| *(none)* | the bundled demo. |
+| `?demo` | alias for the bundled MoaV PDF demo (`?p=moav-pdf`). |
+| *(none)* | the bundled HTML demo. |
+
+All player links live under **`/app/`** (the root `/` is the landing page; legacy root player links redirect to `/app/`).
 
 ```
 # load over each transport
-…/p2present/?manifest=https://host.example/p2present.json
-…/p2present/?manifest=ipfs://bafy…/p2present.json
-…/p2present/?manifest=magnet:?xt=urn:btih:…
+…/p2present/app/?manifest=https://host.example/p2present.json
+…/p2present/app/?manifest=ipfs://bafy…/p2present.json
+…/p2present/app/?manifest=magnet:?xt=urn:btih:…
 # a bundled local deck
-…/p2present/?p=demo
-…/p2present/?p=moav-pdf            # the PDF-deck demo
+…/p2present/app/?p=demo
+…/p2present/app/?p=moav-pdf            # the PDF-deck demo (also …/app/?demo)
 ```
 
 The header's **🔗 Share** button opens a small popover (YouTube-style) with two
@@ -228,8 +234,8 @@ A **hash fragment** opens the player at a specific spot and combines with any of
 the loaders above:
 
 ```
-…/p2present/?p=demo#t=575&slide=13      # open at 9:35, slide 13
-…/p2present/?src=<base64>#t=120          # open a shared deck at 2:00
+…/p2present/app/?p=demo#t=575&slide=13      # open at 9:35, slide 13
+…/p2present/app/?src=<base64>#t=120          # open a shared deck at 2:00
 ```
 
 `t` is seconds into the video; `slide` is a 1-based slide number (either may be
