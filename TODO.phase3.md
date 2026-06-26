@@ -30,11 +30,11 @@ Living checklist for the phase-3 overnight job. Status legend: ⬜ todo · 🔄 
 - ✅ Smoke: builder validates + exports
 
 ## 2. IPFS upload + WebTorrent seed helper (new page `docs/host/`) + HOSTING.md
-- ⬜ IPFS client-side upload via user-configured token (web3.storage/Storacha + Pinata), token in localStorage only
-- ⬜ WebTorrent in-browser create+seed from a file → magnet URI
-- ⬜ Both feed into the builder
-- ⬜ HOSTING.md: plain URLs, IPFS (with/without own pin), WebTorrent (browser vs CLI), mapping to manifest entries
-- ⬜ Smoke: helper page loads (mock pin call when no token)
+- ✅ IPFS client-side upload via user-configured token (web3.storage/Storacha + Pinata), token in localStorage only
+- ✅ WebTorrent in-browser create+seed from a file → magnet URI
+- ✅ Both feed into the builder
+- ✅ HOSTING.md: plain URLs, IPFS (with/without own pin), WebTorrent (browser vs CLI), mapping to manifest entries
+- ✅ Smoke: helper page loads (mock pin call when no token)
 
 ## 5. Docs review (LAST)
 - ⬜ README, SPEC.md, HOSTING/SETUP, AUTHORING guide, JSON schema, docs index

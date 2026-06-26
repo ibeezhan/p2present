@@ -96,6 +96,13 @@
 }
 .p2-json code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; color: var(--fg); }
 
+.p2-tag {
+  text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em;
+  background: var(--accent-dim); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex: 0 0 auto;
+}
+.p2-hosted-ref { flex: 1; min-width: 0; word-break: break-all; font-size: 12px; color: var(--accent); font-family: ui-monospace, Menlo, monospace; }
+.p2-copy { padding: 4px 8px; flex: 0 0 auto; }
+
 @media (max-width: 900px) {
   .p2-builder { grid-template-columns: 1fr; }
   .p2-preview { position: static; max-height: none; }

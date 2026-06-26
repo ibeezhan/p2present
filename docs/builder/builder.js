@@ -391,10 +391,33 @@ function addRow(kind) {
   updatePreview();
 }
 
+// Hosted references produced by the Host page (localStorage handoff).
+function renderHosted() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem('p2present:hosted')) || []; } catch {}
+  const card = $('hosted-card');
+  if (!card) return;
+  card.hidden = list.length === 0;
+  $('hosted-count').textContent = list.length ? `(${list.length})` : '';
+  const box = $('hosted-list'); box.innerHTML = '';
+  for (const e of list) {
+    const r = el('div', 'p2-row');
+    const tag = el('span', 'p2-tag', { textContent: e.kind });
+    const code = el('code', 'p2-hosted-ref', { textContent: e.ref });
+    const btn = el('button', 'p2-load p2-copy', { type: 'button', textContent: '📋', title: 'Copy reference' });
+    btn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(e.ref); btn.textContent = '✓'; setTimeout(() => (btn.textContent = '📋'), 1200); } catch {}
+    });
+    r.append(tag, code, btn);
+    box.appendChild(r);
+  }
+}
+
 async function init() {
   try { schema = await (await fetch('../p2present.schema.json')).json(); } catch { schema = null; }
   bindStatic();
   fillStatic(); renderAllLists(); updatePreview();
+  renderHosted();
 
   document.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => addRow(b.dataset.add)));
   $('load-demo').addEventListener('click', loadDemo);

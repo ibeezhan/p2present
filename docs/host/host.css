@@ -1,0 +1,68 @@
+/* host.css — "host your assets" helper. Reuses tokens + buttons from app.css. */
+
+.p2-host { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
+.p2-lead { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 16px; }
+.p2-lead code, .p2-hint code, .p2-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+
+.p2-host-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 820px) { .p2-host-grid { grid-template-columns: 1fr; } }
+
+.p2-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px;
+}
+.p2-card h2 { margin: 0 0 4px; font-size: 17px; }
+.p2-hint { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 6px 0; }
+.p2-note {
+  color: var(--muted); font-size: 12px; line-height: 1.5;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-dim); border-radius: 6px; padding: 8px 10px; margin: 8px 0;
+}
+
+.p2-field { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: 13px; }
+.p2-field > span { color: var(--muted); }
+.p2-field input, .p2-field select, .p2-field textarea {
+  background: var(--panel-2); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font-size: 14px; font-family: inherit;
+}
+.p2-field input:focus, .p2-field select:focus, .p2-field textarea:focus {
+  outline: 2px solid var(--accent-dim); border-color: var(--accent);
+}
+.p2-field textarea { resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+.p2-row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+.p2-primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.p2-load:disabled { opacity: 0.5; cursor: default; }
+
+.p2-home { font-size: 20px; text-decoration: none; }
+.p2-builder-nav { margin-left: auto; display: flex; gap: 8px; }
+
+.p2-status-line { font-size: 13px; color: var(--muted); margin: 8px 0; min-height: 1em; }
+.p2-status-line.is-error { color: var(--error); }
+
+.p2-result {
+  margin-top: 10px; background: var(--panel-2); border: 1px solid var(--accent-dim);
+  border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.p2-result-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.p2-result-label { color: var(--muted); font-size: 12px; flex: 0 0 130px; }
+.p2-result-val {
+  flex: 1; min-width: 0; word-break: break-all; font-size: 12.5px; color: var(--fg);
+  font-family: ui-monospace, Menlo, monospace;
+}
+.p2-result-val.is-ref { color: var(--accent); }
+.p2-copy { padding: 4px 8px; flex: 0 0 auto; }
+
+.p2-hosted-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.p2-hosted-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+}
+.p2-hosted-meta { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.p2-tag {
+  text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em;
+  background: var(--accent-dim); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-weight: 700;
+}
+.p2-hosted-name { font-size: 12px; color: var(--muted); }
+.p2-hosted-ref { flex: 1; min-width: 0; word-break: break-all; font-size: 12px; color: var(--accent); font-family: ui-monospace, Menlo, monospace; }

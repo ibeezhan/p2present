@@ -43,6 +43,12 @@
         <button type="button" class="p2-load" id="load-paste-btn">Load pasted JSON</button>
       </details>
 
+      <details class="p2-card" id="hosted-card" hidden>
+        <summary>📦 Hosted references <span class="p2-count" id="hosted-count"></span></summary>
+        <p class="p2-hint">References you produced in the <a href="../host/">Host page</a>. Click one to copy, then paste it into a video / deck / subtitle source below.</p>
+        <div id="hosted-list" class="p2-list"></div>
+      </details>
+
       <details class="p2-card" open>
         <summary>Title &amp; metadata</summary>
         <label class="p2-field"><span>Title</span><input id="f-title" type="text" placeholder="My talk" /></label>
