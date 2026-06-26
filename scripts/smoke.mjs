@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { signEip191WithKey } from '../docs/src/sign.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -88,6 +89,24 @@ const FIXTURES = {
     layout: { split: 0.6, mode: 'split' },
   },
 };
+
+// Signed fixtures (Phase 8): a self-contained local-asset deck signed with the
+// web3.js test key, plus a tampered copy. Built at runtime so the canonical bytes
+// match exactly what gets served. Address for this key: 0x2c7536…65c23.
+const SIGN_KEY = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';
+const SIGNED_ADDR = '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23';
+const signedBase = {
+  p2present: '1.0', title: 'Signed Deck',
+  video: { sources: [{ provider: 'mp4', src: `${ORIGIN}/content/demo/slides/assets/nedagram-demo.mp4` }] },
+  deck: { type: 'html', sources: [{ src: `${ORIGIN}/content/demo/slides/index.html` }], slideCount: 23 },
+  timing: [{ time: 0, slide: 1 }],
+};
+FIXTURES['signed.json'] = signEip191WithKey(signedBase, SIGN_KEY);
+FIXTURES['tampered.json'] = (() => {
+  const t = JSON.parse(JSON.stringify(FIXTURES['signed.json']));
+  t.title = 'Tampered Deck';   // changed AFTER signing → must fail verification
+  return t;
+})();
 
 function serve() {
   return new Promise((resolve) => {
@@ -183,7 +202,9 @@ async function main() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   // Point the app's "Save & share" + service-id loader at our mock service above
   // (instead of the production default) for every page in this run.
-  await context.addInitScript(() => { window.__P2_SERVICE_BASE = location.origin; });
+  // Point "Save & share"/service loads at our mock backend, and disable ENS
+  // reverse-resolution (no public-RPC calls during the offline smoke run).
+  await context.addInitScript(() => { window.__P2_SERVICE_BASE = location.origin; window.__P2_ENS = false; });
 
   try {
     // === 0. Landing page (/) — hero, sections, CTA, redirect, responsive ===
@@ -758,6 +779,83 @@ async function main() {
       const noHScroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2);
       ok('host: no horizontal overflow at 390px', noHScroll);
       ok('host: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
+      await p.close();
+    }
+
+    // === 9. Signed manifests (Phase 8): verify badge states ===
+    {
+      // Valid signature → "✓ signed by 0x…" badge (ENS disabled, so the address
+      // form is shown), and the player still mounts normally.
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/app/?manifest=${encodeURIComponent(`${ORIGIN}/__fixtures__/signed.json`)}`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-video-pane video', { timeout: 20000 }).catch(() => {});
+      const valid = await p.waitForFunction(
+        () => document.getElementById('sig-badge')?.classList.contains('is-valid'),
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      const badge = await p.evaluate(() => ({
+        text: document.getElementById('sig-badge')?.textContent || '',
+        title: document.getElementById('sig-badge')?.getAttribute('title') || '',
+        hidden: document.getElementById('sig-badge')?.hidden,
+      }));
+      ok('signed: valid signature shows a "✓ signed by" badge', valid && /✓ signed by/.test(badge.text), badge.text);
+      ok('signed: badge names the signer address', /0x2c75/i.test(badge.text + badge.title), badge.text);
+      ok('signed: player still mounts a working deck', await p.$('.p2-video-pane video'));
+      ok('signed: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
+      await p.screenshot({ path: path.join(SHOTS, 'signed-badge.png') });
+      await p.close();
+    }
+    {
+      // Tampered manifest → "⚠ signature invalid"; playback NOT blocked.
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/app/?manifest=${encodeURIComponent(`${ORIGIN}/__fixtures__/tampered.json`)}`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-video-pane video', { timeout: 20000 }).catch(() => {});
+      const invalid = await p.waitForFunction(
+        () => document.getElementById('sig-badge')?.classList.contains('is-invalid'),
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      ok('signed: tampered manifest shows "⚠ signature invalid"', invalid,
+        await p.evaluate(() => document.getElementById('sig-badge')?.textContent || ''));
+      ok('signed: tampered manifest still plays (not blocked)', await p.$('.p2-video-pane video'));
+      await p.close();
+    }
+    {
+      // Unsigned manifest → subtle "unsigned" pill.
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/app/?manifest=${encodeURIComponent(`${ORIGIN}/__fixtures__/seek.json`)}`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-video-pane video', { timeout: 20000 }).catch(() => {});
+      const unsigned = await p.waitForFunction(
+        () => document.getElementById('sig-badge')?.classList.contains('is-unsigned'),
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      ok('unsigned: shows a subtle "unsigned" pill', unsigned,
+        await p.evaluate(() => document.getElementById('sig-badge')?.textContent || ''));
+      await p.close();
+    }
+    {
+      // Builder: sign with an Ethereum private key → signed status; tampering a
+      // field after signing flags it stale.
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/builder/`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-form', { timeout: 15000 });
+      await p.click('#load-demo');
+      await p.waitForFunction(() => /valid/i.test(document.getElementById('valid-badge')?.textContent || ''), { timeout: 10000 }).catch(() => {});
+      await p.evaluate(() => { document.getElementById('sign-card').open = true; });   // expand the collapsed Sign card
+      await p.fill('#sign-ethkey', SIGN_KEY);
+      await p.click('#sign-ethkey-btn');
+      const signed = await p.waitForFunction(
+        () => /✓ signed \(eip191\)/.test(document.getElementById('sign-status')?.textContent || ''),
+        { timeout: 10000 }).then(() => true).catch(() => false);
+      ok('builder: sign with an ETH key embeds a sig + shows signed status', signed,
+        await p.evaluate(() => document.getElementById('sign-status')?.textContent || ''));
+      const exported = await p.evaluate(() => {
+        try { const m = JSON.parse(document.querySelector('#json code').textContent); return m.sig?.alg === 'eip191' && /^0x/.test(m.sig.signature); } catch { return false; }
+      });
+      ok('builder: exported manifest carries the sig block', exported);
+      // Edit the title → the embedded sig is now stale.
+      await p.fill('#f-title', 'Edited After Signing');
+      const stale = await p.waitForFunction(
+        () => /re-sign/i.test(document.getElementById('sign-status')?.textContent || ''),
+        { timeout: 5000 }).then(() => true).catch(() => false);
+      ok('builder: editing after signing flags the sig stale', stale,
+        await p.evaluate(() => document.getElementById('sign-status')?.textContent || ''));
       await p.close();
     }
 

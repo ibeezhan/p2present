@@ -13,6 +13,12 @@ import {
 import { normaliseManifest } from '../docs/src/manifest.js';
 import { SyncEngine } from '../docs/src/sync.js';
 import { validate } from '../docs/src/schema-validate.js';
+import { keccak256Utf8, toHex } from '../docs/src/crypto/keccak.js';
+import { privToAddress, sign as secpSign, recoverAddress, sigToHex, sigFromHex, toChecksumAddress } from '../docs/src/crypto/secp256k1.js';
+import {
+  canonicalize, signEip191WithKey, signEd25519, generateEd25519,
+  verifyManifest, describeSigner,
+} from '../docs/src/sign.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -239,10 +245,108 @@ test('schema: deck.thumbnails accepts both shapes', () => {
   assert.ok(validate(b, SCHEMA).valid);
 });
 
+// --- signed manifests (Phase 8) --------------------------------------------
+// Known secp256k1 vector: privkey → its Ethereum address (web3.js test key).
+const ETH_KEY = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';
+const ETH_ADDR = '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23';
+const signable = () => ({
+  p2present: '1.0', title: 'Signed Talk',
+  meta: { author: 'A' },
+  video: { sources: [{ provider: 'youtube', src: 'abc' }] },
+  deck: { type: 'html', sources: [{ src: 'slides/index.html' }], slideCount: 3 },
+  timing: [{ time: 0, slide: 1 }, { time: 30, slide: 2 }],
+});
+
+test('keccak256 matches a known vector', () => {
+  assert.equal(toHex(keccak256Utf8('abc')),
+    '4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45');
+});
+test('secp256k1: privkey → address vector + EIP-55 checksum', () => {
+  assert.equal(privToAddress(ETH_KEY), ETH_ADDR.toLowerCase());
+  assert.equal(toChecksumAddress(privToAddress(ETH_KEY)), ETH_ADDR);
+  assert.equal(privToAddress(1n), '0x7e5f4552091a69125d5dfcb7b8c2659029395bdf');
+});
+test('secp256k1: sign → recover round-trips (incl. hex pack/parse)', () => {
+  const h = keccak256Utf8('p2present');
+  const sig = secpSign(h, ETH_KEY);
+  assert.equal(recoverAddress(h, sig), ETH_ADDR.toLowerCase());
+  assert.equal(recoverAddress(h, sigFromHex(sigToHex(sig))), ETH_ADDR.toLowerCase());
+});
+
+test('canonicalize: key order independent, array order preserved', () => {
+  assert.equal(canonicalize({ b: 1, a: 2, c: [3, { z: 1, y: 2 }] }),
+    canonicalize({ c: [3, { y: 2, z: 1 }], a: 2, b: 1 }));
+  assert.equal(canonicalize({ a: 2, b: 1, c: [3, { y: 2, z: 1 }] }),
+    '{"a":2,"b":1,"c":[3,{"y":2,"z":1}]}');
+  assert.notEqual(canonicalize([1, 2]), canonicalize([2, 1]));   // arrays are ordered
+});
+
+test('sign eip191 (raw key): valid round trip; signer = the key address', async () => {
+  const signed = signEip191WithKey(signable(), ETH_KEY);
+  assert.equal(signed.sig.alg, 'eip191');
+  assert.equal(signed.sig.signer.address, ETH_ADDR);
+  const v = await verifyManifest(signed);
+  assert.equal(v.state, 'valid');
+  assert.equal(v.signer.address, ETH_ADDR);
+  const d = await describeSigner(v, { resolveEns: false });
+  assert.equal(d.kind, 'address');
+});
+test('sign eip191: tampering any signed field invalidates it', async () => {
+  const signed = signEip191WithKey(signable(), ETH_KEY);
+  for (const mutate of [
+    (m) => { m.title = 'Hacked'; },
+    (m) => { m.deck.slideCount = 99; },
+    (m) => { m.timing[0].slide = 5; },
+    (m) => { m.video.sources[0].src = 'evil'; },
+    (m) => { m.sig.signer.address = '0x0000000000000000000000000000000000000001'; },
+  ]) {
+    const t = JSON.parse(JSON.stringify(signed));
+    mutate(t);
+    assert.equal((await verifyManifest(t)).state, 'invalid');
+  }
+});
+test('sign eip191: a corrupt signature is invalid, not throwing', async () => {
+  const signed = signEip191WithKey(signable(), ETH_KEY);
+  signed.sig.signature = '0x' + 'ab'.repeat(65);
+  const v = await verifyManifest(signed);
+  assert.equal(v.state, 'invalid');
+});
+
+test('sign ed25519: valid round trip + domain bound into the signature', async () => {
+  const kp = await generateEd25519();
+  const signed = await signEd25519(signable(), { ...kp, domain: 'example.com' });
+  assert.equal(signed.sig.alg, 'ed25519');
+  assert.equal(signed.sig.signer.key, kp.publicKey);
+  assert.equal((await verifyManifest(signed)).state, 'valid');
+  // tamper content
+  const t1 = JSON.parse(JSON.stringify(signed)); t1.title = 'X';
+  assert.equal((await verifyManifest(t1)).state, 'invalid');
+  // tamper the bound domain label
+  const t2 = JSON.parse(JSON.stringify(signed)); t2.sig.signer.domain = 'evil.com';
+  assert.equal((await verifyManifest(t2)).state, 'invalid');
+  const d = await describeSigner(await verifyManifest(signed), { resolveEns: false });
+  assert.equal(d.label, 'example.com');
+});
+
+test('unsigned manifest verifies as "unsigned" (never invalid)', async () => {
+  assert.equal((await verifyManifest(signable())).state, 'unsigned');
+  assert.equal((await verifyManifest({ ...signable(), sig: { alg: 'eip191' } })).state, 'unsigned');
+});
+
+test('schema: a signed manifest validates; a sig missing fields is flagged', () => {
+  const signed = signEip191WithKey(signable(), ETH_KEY);
+  assert.ok(validate(signed, SCHEMA).valid);
+  const bad = JSON.parse(JSON.stringify(signed)); delete bad.sig.signature;
+  const r = validate(bad, SCHEMA);
+  assert.ok(!r.valid && r.errors.some((e) => /signature/.test(e.path)));
+  const bad2 = JSON.parse(JSON.stringify(signed)); bad2.sig.alg = 'rsa';
+  assert.ok(!validate(bad2, SCHEMA).valid);
+});
+
 // --- runner ----------------------------------------------------------------
 let failed = 0;
 for (const [name, fn] of tests) {
-  try { fn(); passed++; console.log('  ✓', name); }
+  try { await fn(); passed++; console.log('  ✓', name); }
   catch (err) { failed++; console.error('  ✗', name, '\n     ', err.message); }
 }
 console.log(`\n${passed}/${tests.length} passed${failed ? `, ${failed} FAILED` : ''}.`);
