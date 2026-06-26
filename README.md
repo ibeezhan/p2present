@@ -77,11 +77,11 @@ Captured with the headless-Chrome smoke harness (`npm run smoke`).
 
 - **Flexible player layout** — slides + video with a **draggable divider** and **four layout modes** (split · slides-focus · video-focus · overlap picture-in-picture), animated transitions, **fullscreen**, and a responsive mobile stack. The divider ratio, mode, and PiP position/size persist across visits. See [Layout controls](#layout-controls).
 - **Bidirectional sync engine** — playing/scrubbing the video advances slides per the timing JSON; navigating slides (keyboard / wheel / click) seeks the video to that slide. A 🔗 toggle unlinks them. Sync keeps working in every layout mode.
-- **Subtitles / captions** — load `.vtt` **and** `.srt` (converted in-browser) tracks; native HTML5 `<track>` on mp4, a synced overlay on YouTube, with a **CC menu** to pick language / off. See [Subtitles](#subtitles).
-- **Pluggable deck adapters** — `html` (reveal.js-style / `<deck-stage>` web components, in an iframe) and `pdf` (rendered with pdf.js). Add more behind one interface.
+- **Subtitles / captions** — load `.vtt` **and** `.srt` (converted in-browser) tracks, with a **Subtitles menu** to pick language / off and choose **placement**: a **full-window overlay** across the whole player (default) or inside the video pane (native `<track>` on mp4). See [Subtitles](#subtitles).
+- **Pluggable deck adapters** — `html` (reveal.js-style / `<deck-stage>` web components, in an iframe), `pdf` (rendered with pdf.js), and `embed` (an external slide URL — Google Slides / SpeakerDeck / Canva — in an iframe). Add more behind one interface.
 - **Pluggable video providers** with **source fallback** — `youtube` (IFrame API), `mp4` (HTML5 `<video>`), **`webtorrent`** (stream a magnet into `<video>` via `file.renderTo`), and **`ipfs`** (play a CID through gateway fallback). List several sources and the player uses the first that loads, gracefully falling through when a p2p source can't be reached. See [Decentralized sources](#decentralized-sources-p2p).
 - **Decentralized loading & sharing** — load a whole presentation from `https` / `ipfs://` / `magnet:`, deep-link with `?manifest=` / `?p=`, or pack a self-contained `?src=<base64>` link with the **🔗 Share** button. See [Loading & sharing](#loading--sharing).
-- **Thumbnail scrubber + deep-links** — hovering/seeking the timeline shows a **slide preview** for that moment (PDF pages are rendered live; HTML decks use authored thumbnails or a slide-label card). Open the player at an exact spot with `#t=<seconds>&slide=<n>`; the hash tracks where you are, and a **📍 This spot** button copies a link to the current moment. See [Loading & sharing](#loading--sharing).
+- **Thumbnail scrubber + deep-links** — hovering/seeking the timeline shows a **slide preview** for that moment (PDF pages are rendered live; HTML decks use authored thumbnails or a slide-label card). Open the player at an exact spot with `#t=<seconds>&slide=<n>`; the hash tracks where you are, and the **🔗 Share** menu's "copy link to this moment" copies a link to the current spot. See [Loading & sharing](#loading--sharing).
 - **Visual manifest builder** — the **[Builder](https://ibeezhan.github.io/p2present/builder/)** assembles a `p2present.json` from a form (video sources, deck, timing, subtitles, resolvers, layout) with a live JSON preview, **schema validation**, download / copy / open-in-player, load-existing, and a **timing-capture** helper that stamps the playing video's time against the current slide.
 - **In-browser asset hosting** — the **[Host helper](https://ibeezhan.github.io/p2present/host/)** pins a file to **IPFS** (via your own Pinata / web3.storage token, stored only in your browser) or creates + seeds a **WebTorrent** in the tab, handing the resulting `ipfs://` / `magnet:` reference to the Builder. See [HOSTING.md](HOSTING.md).
 - **Modular slide transitions** — `cut` · `fade` · `slide` · `none`, in an extensible registry.
@@ -156,10 +156,11 @@ A presentation is one `manifest.json`. The current **`p2present.json` v1.0** sch
 Highlights (see **[SPEC.md](SPEC.md)** for every field):
 
 - **`video.sources`** — a fallback list; the player tries each until one loads (`youtube`, `mp4`, `webtorrent`, `ipfs`). **`deck.sources`** is likewise a fallback list, and may itself include `ipfs://` / `magnet:` entries.
+- **`deck.type`** — `html`, `pdf`, or `embed` (an external slide URL shown read-only in an iframe; set `deck.slideCount`, and optionally `deck.embed` for deep-linking — see [SPEC.md](SPEC.md#deck)).
 - **`timing`** — one cue per slide boundary; either inline, or a **string path to an external JSON file**. Each cue: `time` (float **seconds**, or `"HH:MM:SS.mmm"` / `"MM:SS"`), **1-based** `slide`, optional `transition` (`cut` | `fade` | `slide` | `none`) and `label`. Cues are sorted by time; the slide shown is the last cue whose `time` ≤ the video's current time.
 - **`subtitles`** — `.vtt` / `.srt` caption tracks (see [Subtitles](#subtitles)).
 - **`resolvers`** — override IPFS gateways / WebTorrent trackers used by the `ipfs` / `webtorrent` providers, P2P decks, and `ipfs://` asset resolution.
-- **`layout`** — default split ratio + mode (see [Layout controls](#layout-controls)).
+- **`layout`** — default split ratio, mode, and caption placement (see [Layout controls](#layout-controls) / [Subtitles](#subtitles)).
 - Relative `src` values (deck, mp4, subtitles, poster, external timing) resolve against the **manifest's own URL**; `ipfs://` and `magnet:` srcs resolve over their respective transports.
 
 ---
@@ -215,8 +216,11 @@ The resolver host decides what to load from the URL query — **first match wins
 …/p2present/?p=moav-pdf            # the PDF-deck demo
 ```
 
-The header's **🔗 Share** button base64-encodes the current presentation's source
-into a self-contained `…?src=<base64>` link and copies it to your clipboard.
+The header's **🔗 Share** button opens a small popover (YouTube-style) with two
+options: **Copy presentation link** (a self-contained `…?src=<base64>` link to the
+whole presentation) and **Copy link to this moment** (the same link plus a
+`#t=…&slide=…` deep-link to the current slide + time). Either copies to your
+clipboard with a confirmation.
 
 ### Deep-links (`#t=…&slide=…`)
 
@@ -229,8 +233,9 @@ the loaders above:
 ```
 
 `t` is seconds into the video; `slide` is a 1-based slide number (either may be
-omitted). The hash updates (debounced) as you navigate, and the **📍 This spot**
-button copies a `?src=<base64>#t=…&slide=…` link to exactly where you are.
+omitted). The hash updates (debounced) as you navigate, and the Share menu's
+**📍 Copy link to this moment** option copies a `?src=<base64>#t=…&slide=…` link to
+exactly where you are.
 
 ---
 
@@ -238,16 +243,20 @@ button copies a `?src=<base64>#t=…&slide=…` link to exactly where you are.
 
 The control bar has a **layout-mode switcher** (and `m` cycles modes; `f` toggles fullscreen):
 
-| Mode | What it does |
-|------|--------------|
-| **Split** (`▥`) | Slides + video side by side, with a **draggable divider** — grab the handle between the panes to resize. On portrait phones the split stacks vertically and the divider becomes a horizontal grab bar dragged **up/down**. |
-| **Slides focus** (`▢`) | Slides large, video small on the side. |
-| **Video focus** (`▣`) | Video large, slides small on the side. |
-| **Overlap** (`◳`) | Slides fill the stage; the video floats as a **draggable, resizable picture-in-picture** (drag its title bar, resize from the corner grip). |
+Each mode is shown as a small glyph that **depicts its pane split**, with a short
+label (hidden on narrow screens) and a tooltip:
+
+| Mode | Glyph | What it does |
+|------|-------|--------------|
+| **Split** | two equal panes | Slides + video side by side, with a **draggable divider** — grab the handle between the panes to resize. On portrait phones the split stacks vertically and the divider becomes a horizontal grab bar dragged **up/down**. |
+| **Slides** | large + small | Slides large, video small on the side. |
+| **Video** | small + large | Video large, slides small on the side. |
+| **PiP** (overlap) | full pane + corner inset | Slides fill the stage; the video floats as a **draggable, resizable picture-in-picture** (drag its title bar, resize from the corner grip). |
+| **Full** | corner-bracket frame | Fullscreen (see below). |
 
 The mode switcher and fullscreen button are grouped under a labelled **Layout** cluster in the control bar. Mode changes animate smoothly, and keyboard / scroll / sync keep working in every mode. The divider ratio, current mode, and PiP geometry are saved to `localStorage` and restored on the next visit; the manifest's `layout.split` / `layout.mode` set the initial defaults.
 
-The `⛶` button (or `f`) takes the whole player fullscreen. Where the browser supports the Fullscreen API it uses it; on iOS Safari — which doesn't expose fullscreen for arbitrary elements — it falls back to a CSS **maximized** full-viewport mode, so the button always works. `Esc` (or the button) exits. In fullscreen the **control bar auto-hides** after ~2.5s of inactivity, floating back in (as a fixed overlay that never reflows the slides/video) on any mouse-move, tap, or key press.
+The **Full** button (or `f`) takes the whole player fullscreen. Where the browser supports the Fullscreen API it uses it; on iOS Safari — which doesn't expose fullscreen for arbitrary elements — it falls back to a CSS **maximized** full-viewport mode, so the button always works. `Esc` (or the button) exits. In fullscreen the **control bar auto-hides** after ~2.5s of inactivity, floating back in (as a fixed overlay that never reflows the slides/video) on any mouse-move, tap, or key press.
 
 ### On mobile
 
@@ -267,8 +276,11 @@ Add caption tracks under `subtitles[]`:
 ```
 
 - Both **WebVTT** (`.vtt`) and **SubRip** (`.srt`) are accepted — `.srt` is converted to WebVTT in the browser at load. `format` is inferred from the extension if omitted.
-- For the **mp4** provider, tracks are attached as native HTML5 `<track kind="subtitles">` and rendered by the browser. For **YouTube** (whose iframe can't take external tracks), p2present renders a synced caption **overlay** driven by the sync clock — positioned centred along the bottom of the video pane (readable in every layout mode, including the overlap PiP).
-- A **CC** menu in the control bar picks the language or turns captions off; `"default": true` selects the track shown on load.
+- A **Subtitles** menu in the control bar picks the language (or turns captions off; `"default": true` selects the track shown on load) **and chooses where captions are drawn** (`layout.captionPlacement`):
+  - **Full window** *(default)* — captions overlay along the bottom of the **whole player** (slides + video together), readable in every layout mode and in fullscreen. Driven by the sync clock; works for any provider (YouTube **or** mp4).
+  - **Over video** — captions stay inside the video pane: native HTML5 `<track kind="subtitles">` for **mp4**, or a synced overlay-in-pane for **YouTube**.
+
+  The viewer's choice is persisted to `localStorage` and overrides the manifest default. Set the default in the manifest with `"layout": { "captionPlacement": "window" | "video" }`.
 - The bundled demo ships a couple of **sample** cues (clearly marked as samples) under `docs/content/demo/subtitles/` so the feature is demonstrable — replace them with a real transcript when you fork.
 
 ### Generate a starter `timing[]` — `import-chapters`
@@ -308,7 +320,7 @@ Create `docs/src/decks/<name>.js` extending `BaseDeckAdapter` (implement `load`,
 ```js
 deckAdapters.register('mdx', MyMdxAdapter);
 ```
-See `html-deck.js` (iframe + `<deck-stage>`/reveal.js/generic-sections) and `pdf-deck.js` (pdf.js).
+See `html-deck.js` (iframe + `<deck-stage>`/reveal.js/generic-sections), `pdf-deck.js` (pdf.js), and `embed-deck.js` (external embeddable slide URL in an iframe).
 
 ### Add a transition
 Create `docs/src/transitions/<name>.js` exporting `{ name, run({ incoming, outgoing, container, duration, direction }) }` (returns a Promise), then register in `docs/src/transitions/index.js`. Use it via a cue's `"transition"`.
@@ -369,7 +381,7 @@ docs/                     # ← GitHub Pages root (served as-is, no build)
     resolve.js            # https/ipfs/magnet transports + base64 + WebTorrent client
     schema-validate.js    # tiny dependency-free JSON-Schema validator (Builder)
     registry.js           # generic plugin registry
-    decks/   { base, index, html-deck, pdf-deck }   # adapters expose thumbnail()
+    decks/   { base, index, html-deck, pdf-deck, embed-deck }   # adapters expose thumbnail()
     video/   { base, index, youtube, mp4, webtorrent, ipfs }
     transitions/ { index, cut, fade, slide, none }
   content/demo/           # the bundled HTML-deck demo (deck + manifest + subtitles)

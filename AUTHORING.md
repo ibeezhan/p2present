@@ -69,7 +69,16 @@ valid `p2present.json` for you, with a live JSON preview and **schema validation
 2. **Video sources** — add one row per source (`youtube` / `mp4` / `webtorrent` /
    `ipfs`) with its `src`. Multiple rows = an ordered **fallback list**; the player
    tries each until one loads. Paste the references from Step 2 here.
-3. **Deck** — choose `html` or `pdf`, add the deck `src`(s).
+3. **Deck** — choose the **type** (`html` / `pdf` / `embed`) and add the deck
+   `src`(s). Each source row has a **protocol** dropdown (https / ipfs /
+   webtorrent), mirroring the video sources, so a P2P deck is built the same way.
+   - `html` — a self-hosted HTML deck (`<deck-stage>` / reveal.js / `<section>`s).
+   - `pdf` — a `.pdf`, rendered page-per-slide by pdf.js.
+   - `embed` — an external embeddable slide URL (Google Slides *publish to web →
+     embed*, SpeakerDeck, Canva, …). It's **display-only** — set **Slide count**
+     so the counter is right. Tight slide↔video sync wants `html`/`pdf` instead;
+     advanced authors can add a `deck.embed` deep-link config by hand (see
+     [SPEC.md](SPEC.md#deck)).
 4. **Timing** — the slide↔video map. Add a cue per slide boundary with a `time`
    (seconds or `MM:SS`), a 1-based `slide`, and a transition. The fastest way:
    - Click **🎬 Open timing-capture player** to mount the real player inside the
@@ -81,7 +90,10 @@ valid `p2present.json` for you, with a live JSON preview and **schema validation
      `scripts/import-chapters.mjs` (see the [README](README.md#generate-a-starter-timing--import-chapters)).
 5. **Subtitles** *(optional)* — add `.vtt`/`.srt` tracks with a language + label.
 6. **Resolvers / Layout** *(optional)* — custom IPFS gateways / WebTorrent
-   trackers, and the default split / mode / transition.
+   trackers, and the default split / mode / transition. Caption placement
+   (`layout.captionPlacement`: `window` full-player overlay, the default, vs
+   `video` in-pane) defaults sensibly; the viewer can also flip it live from the
+   **Subtitles** menu.
 
 When the badge shows **✓ valid**, you're done. Use:
 
@@ -127,15 +139,16 @@ You have two ways to get the presentation in front of people:
 `…/?p=<your-talk>`. This is the durable, canonical URL. See
 [README → Fork & self-host](README.md#fork--self-host).
 
-**B. Share a link (no fork).** From the player, the **🔗 Share** button copies a
-self-contained `?src=<base64>` link that carries the whole manifest — anyone can
-open it on the public player at `ibeezhan.github.io/p2present`. (Inline manifests
-must use **absolute** asset URLs, since there's no manifest folder to resolve
-relative paths against.)
+**B. Share a link (no fork).** From the player, the **🔗 Share** button opens a
+small menu; **Copy presentation link** copies a self-contained `?src=<base64>`
+link that carries the whole manifest — anyone can open it on the public player at
+`ibeezhan.github.io/p2present`. (Inline manifests must use **absolute** asset
+URLs, since there's no manifest folder to resolve relative paths against.)
 
-**Deep-link to a moment.** The **📍 This spot** button copies a link with a
-`#t=<seconds>&slide=<n>` hash so it opens right where you are — perfect for
-"watch from here". See [SPEC → Deep-links](SPEC.md#deep-links-tslide).
+**Deep-link to a moment.** The same Share menu's **📍 Copy link to this moment**
+copies a link with a `#t=<seconds>&slide=<n>` hash so it opens right where you
+are — perfect for "watch from here". See
+[SPEC → Deep-links](SPEC.md#deep-links-tslide).
 
 ---
 

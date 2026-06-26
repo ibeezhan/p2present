@@ -25,10 +25,10 @@ Resumable checklist. Commit + push each step.
 - [x] minimal embed deck adapter (iframe, display-only + opt-in deep-link) + schema
 - [x] docs pending in Docs step
 
-## 5. Share UX (YouTube-style)
-- [ ] Remove standalone "This spot" button
-- [ ] Share button → popover menu: "Copy presentation link" / "Copy link to this moment"
-- [ ] copies to clipboard with confirmation
+## 5. Share UX (YouTube-style) ✅
+- [x] Remove standalone "This spot" button
+- [x] Share button → popover: "Copy presentation link" / "Copy link to this moment"
+- [x] copies to clipboard with confirmation; closes on outside-click/Esc/copy
 
 ## Docs
 - [ ] README/SPEC/AUTHORING/schema: embed deck, subtitle full-window, share menu, layout glyphs
