@@ -21,6 +21,7 @@ import { loadPresentation } from './manifest.js';
 import { encodeBase64, decodeBase64 } from './resolve.js';
 import { Player } from './player.js';
 import { saveManifest, manifestApiUrl, shareUrl, serviceBase } from './service.js';
+import { verifyManifest, describeSigner } from './sign.js';
 
 // Bundled local demos resolve to content/<name>/manifest.json; any OTHER ?p=
 // value is treated as a *service id* and loaded from the pastebin backend.
@@ -42,6 +43,7 @@ const $shareMenu = document.getElementById('share-menu');
 const $shareWhole = document.getElementById('share-whole');
 const $shareMoment = document.getElementById('share-moment');
 const $save = document.getElementById('save-btn');
+const $sigBadge = document.getElementById('sig-badge');
 
 /** Parse a deep-link hash like "#t=125&slide=7" → {t, slide} (or null). */
 function parseDeepLink() {
@@ -114,6 +116,7 @@ async function run({ source, share, display }) {
   shareValue = share || '';
   currentRaw = null;
   if ($save) $save.disabled = true;
+  if ($sigBadge) { sigToken++; $sigBadge.hidden = true; }   // drop any stale badge / in-flight ENS
   if (typeof display === 'string') $src.value = display;
   try {
     const manifest = await loadPresentation(source);
@@ -127,6 +130,7 @@ async function run({ source, share, display }) {
     window.__p2player = player;
     const deep = parseDeepLink();
     if (deep) { try { player.applyDeepLink(deep); } catch (e) { console.warn(e); } }
+    renderSignature(manifest._raw || currentRaw);   // async; never blocks playback
     setStatus('');
     if ($share) $share.disabled = false;
     if ($save) $save.disabled = !currentRaw;
@@ -134,6 +138,59 @@ async function run({ source, share, display }) {
     console.error(err);
     setStatus(err.message || String(err), true);
     $app.innerHTML = `<div class="p2-empty">⚠️ ${escapeHtml(err.message || String(err))}</div>`;
+  }
+}
+
+// Verify the manifest's author signature (Phase 8) and reflect it in a header
+// badge: "✓ signed by <ENS/domain/0x…>" when valid, a subtle "unsigned" pill
+// otherwise, "⚠ signature invalid" if a sig is present but doesn't verify. This
+// runs AFTER the player mounts and NEVER blocks playback — a bad/absent sig is
+// purely informational. ENS reverse-resolution upgrades the label when it lands.
+let sigToken = 0;
+async function renderSignature(raw) {
+  if (!$sigBadge) return;
+  const token = ++sigToken;
+  $sigBadge.hidden = false;
+  $sigBadge.className = 'p2-sig-badge is-checking';
+  $sigBadge.textContent = '…';
+  $sigBadge.title = 'Checking signature…';
+
+  let result;
+  try { result = await verifyManifest(raw || {}); }
+  catch { result = { state: 'unsigned' }; }
+  if (token !== sigToken) return;   // another presentation loaded meanwhile
+
+  if (result.state === 'unsigned') {
+    $sigBadge.className = 'p2-sig-badge is-unsigned';
+    $sigBadge.textContent = 'unsigned';
+    $sigBadge.title = 'This presentation carries no author signature.';
+    return;
+  }
+  if (result.state === 'invalid') {
+    $sigBadge.className = 'p2-sig-badge is-invalid';
+    $sigBadge.textContent = '⚠ signature invalid';
+    $sigBadge.title = `A signature is present but does not verify: ${result.reason || 'mismatch'}.`;
+    return;
+  }
+
+  // Valid — show an instant label (abbreviated address / domain / key), then
+  // upgrade an Ethereum address to its ENS name if reverse-resolution succeeds.
+  const quick = await describeSigner(result, { resolveEns: false });
+  if (token !== sigToken) return;
+  $sigBadge.className = 'p2-sig-badge is-valid';
+  $sigBadge.textContent = `✓ signed by ${quick.label}`;
+  $sigBadge.title = `Signature verified (${result.alg}).` +
+    (quick.address ? ` Address ${quick.address}` : '');
+  // ENS reverse-resolution hits a public RPC; on by default, off when a host sets
+  // window.__P2_ENS === false (tests / offline / privacy).
+  const ensOn = !(typeof window !== 'undefined' && window.__P2_ENS === false);
+  if (ensOn && result.alg === 'eip191' && quick.kind === 'address') {
+    describeSigner(result, { resolveEns: true }).then((full) => {
+      if (token !== sigToken || full.kind !== 'ens') return;
+      $sigBadge.textContent = `✓ signed by ${full.label}`;
+      $sigBadge.classList.add('has-ens');
+      $sigBadge.title = `Signature verified (eip191). ENS ${full.label} → ${full.address}`;
+    }).catch(() => {});
   }
 }
 
