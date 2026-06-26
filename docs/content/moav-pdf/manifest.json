@@ -27,7 +27,7 @@
     "ipfsGateways": ["https://{cid}.ipfs.dweb.link", "https://ipfs.io/ipfs/{cid}"],
     "webtorrentTrackers": ["wss://tracker.openwebtorrent.com"]
   },
-  "layout": { "split": 0.6, "mode": "split", "transition": "fade" },
+  "layout": { "split": 0.6, "transition": "fade" },
   "timing": [
     { "time": 0,     "slide": 1,  "transition": "cut",   "label": "01 Title" },
     { "time": 22,    "slide": 2,  "transition": "fade",  "label": "02 Speaker" },

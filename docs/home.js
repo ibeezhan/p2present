@@ -46,14 +46,18 @@ const dotEls     = [...document.querySelectorAll('#morph-dots i')];
 
 let currentStep = -1;
 let ticking = false;
+let flowIntensity = 0;   // 0→1: how hard the sources stream into the player (scroll)
 
-function computeStep() {
+// 0 → 1 progress across the whole pinned showcase track.
+function computeProgress() {
   if (!showcase) return 0;
   const total = showcase.offsetHeight - window.innerHeight; // pinned scroll travel
   if (total <= 0) return 0;
-  const scrolled = clamp(-showcase.getBoundingClientRect().top, 0, total);
-  const p = scrolled / total;                 // 0 → 1 across the whole track
-  return clamp(Math.floor(p * STEPS.length), 0, STEPS.length - 1);
+  return clamp(-showcase.getBoundingClientRect().top, 0, total) / total;
+}
+
+function computeStep() {
+  return clamp(Math.floor(computeProgress() * STEPS.length), 0, STEPS.length - 1);
 }
 
 function applyStep(step) {
@@ -67,10 +71,23 @@ function applyStep(step) {
   if (sticky) sticky.classList.toggle('sourcing', step >= 4);
 }
 
+function applySourceFlow(progress) {
+  if (!sticky) return;
+  const start = 4 / STEPS.length;
+  flowIntensity = clamp((progress - start) / (1 - start), 0, 1);
+  sticky.style.setProperty('--flow', flowIntensity.toFixed(3));
+  sticky.classList.toggle('sourcing', flowIntensity > 0.02);
+}
+
 function onScroll() {
   if (ticking) return;
   ticking = true;
-  requestAnimationFrame(() => { applyStep(computeStep()); ticking = false; });
+  requestAnimationFrame(() => {
+    const progress = computeProgress();
+    applyStep(computeStep());
+    applySourceFlow(progress);
+    ticking = false;
+  });
 }
 
 /* let the captions also drive the morph (and scroll to that step) when clicked */
@@ -258,6 +275,7 @@ function boot() {
   initPicker();
   // prime the morph + keep it in sync on scroll/resize
   applyStep(computeStep());
+  applySourceFlow(computeProgress());
   if (!lenis) window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
 }

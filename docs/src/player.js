@@ -37,6 +37,7 @@ const LS = {
 };
 const CAPTION_PLACEMENTS = ['window', 'video'];
 const FOCUS_GROW = 0.78;   // weight of the dominant pane in the focus modes
+const DEFAULT_MODE = 'overlap'; // default p2p/PiP view; manifests may override
 
 export class Player {
   /** @param {object} manifest normalised manifest @param {HTMLElement} root */
@@ -45,7 +46,7 @@ export class Player {
     this.root = root;
     // Layout defaults come from the manifest; localStorage overrides them.
     this.split = readNum(LS.split, manifest.layout?.split ?? 0.6, 0.15, 0.85);
-    this.mode = readStr(LS.mode, manifest.layout?.mode || 'split',
+    this.mode = readStr(LS.mode, manifest.layout?.mode || DEFAULT_MODE,
       MODES.map((m) => m.id));
   }
 
@@ -765,7 +766,6 @@ export class Player {
     this._controlsHideTimer = null;
     const HIDE_MS = 2500;
     const reveal = () => {
-      if (!this._isImmersive()) return;
       this.root.classList.add('p2-controls-visible');
       clearTimeout(this._controlsHideTimer);
       this._controlsHideTimer = setTimeout(
@@ -776,24 +776,20 @@ export class Player {
     this.root.addEventListener('pointermove', this._onImmersiveActivity);
     this.root.addEventListener('pointerdown', this._onImmersiveActivity);
     this.root.addEventListener('keydown', this._onImmersiveActivity, true);
+    this.root.classList.add('p2-floating-controls');
     // Keep the bar up whenever the pointer rests on it.
     controls.addEventListener('pointerenter', () => {
-      if (!this._isImmersive()) return;
       clearTimeout(this._controlsHideTimer);
       this.root.classList.add('p2-controls-visible');
     });
     controls.addEventListener('pointerleave', reveal);
+    reveal(); // visible on first load; fades away after inactivity.
   }
 
   _updateImmersive() {
     const on = this._isImmersive();
     this.root.classList.toggle('p2-immersive', on);
-    if (on) {
-      this._revealControls?.();       // show, then schedule the auto-hide
-    } else {
-      clearTimeout(this._controlsHideTimer);
-      this.root.classList.remove('p2-controls-visible');
-    }
+    this._revealControls?.();
   }
 
   // --- input ---------------------------------------------------------------
@@ -849,7 +845,7 @@ export class Player {
     clearTimeout(this._controlsHideTimer);
     clearInterval(this._hashTimer);
     this._previewCleanup?.();
-    this.root.classList.remove('is-maximized', 'p2-immersive', 'p2-controls-visible');
+    this.root.classList.remove('is-maximized', 'p2-immersive', 'p2-controls-visible', 'p2-floating-controls');
     document.body.classList.remove('p2-maximized');
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('resize', this._onResize);

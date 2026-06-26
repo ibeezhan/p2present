@@ -10,7 +10,7 @@
 //   "timing": [ {"time":0.0,"slide":1,"transition":"cut"} ]   // or "timing":"timing.json"
 //   "subtitles": [ {"lang":"en","label":"English","src":"...vtt","format":"vtt|srt","default":true} ],
 //   "resolvers": { "ipfsGateways":["..."], "webtorrentTrackers":["..."] },
-//   "layout": { "split":0.6, "mode":"split", "transition":"fade" }
+//   "layout": { "split":0.6, "mode":"overlap", "transition":"fade" }
 // }
 //
 // `time` may be a float (seconds) or an "HH:MM:SS.mmm" string; we normalise it
@@ -253,7 +253,7 @@ function normaliseLayout(layout = {}) {
   let split = Number(layout.split);
   if (!Number.isFinite(split)) split = 0.6;
   split = Math.min(0.85, Math.max(0.15, split));
-  const mode = LAYOUT_MODES.includes(layout.mode) ? layout.mode : 'split';
+  const mode = LAYOUT_MODES.includes(layout.mode) ? layout.mode : 'overlap';
   const transition = typeof layout.transition === 'string' ? layout.transition : 'fade';
   // Caption placement: 'window' overlays captions along the bottom of the WHOLE
   // player (slides + video, all layout modes incl. fullscreen) — the default;

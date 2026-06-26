@@ -153,6 +153,13 @@ test('normalise: resolvers + layout defaults/overrides', () => {
   assert.equal(m.layout.split, 0.7);
   assert.equal(m.layout.mode, 'overlap');
 });
+test('normalise: default layout is p2p/PiP unless JSON overrides it', () => {
+  const raw = fullManifest();
+  delete raw.layout.mode;
+  assert.equal(normaliseManifest(raw, BASE).layout.mode, 'overlap');
+  raw.layout.mode = 'split';
+  assert.equal(normaliseManifest(raw, BASE).layout.mode, 'split');
+});
 test('normalise: rejects missing video/deck', () => {
   assert.throws(() => normaliseManifest({ deck: { type: 'html', sources: [{ src: 'a' }] } }, BASE), /video/);
   assert.throws(() => normaliseManifest({ video: { sources: [{ provider: 'mp4', src: 'a' }] } }, BASE), /deck/);

@@ -361,6 +361,21 @@ async function main() {
     // wait for it rather than racing the deck-iframe load event.
     const controlsBuilt = await page.waitForSelector('.p2-controls', { timeout: 15000 }).then(() => true).catch(() => false);
     ok('demo: controls bar present', controlsBuilt);
+    const defaultMode = await page.evaluate(() => document.querySelector('.p2-stage')?.dataset.mode);
+    ok('demo: default player layout is p2p/PiP view', defaultMode === 'overlap', defaultMode);
+    const floatingControls = await page.evaluate(() => {
+      const root = document.querySelector('.p2-player');
+      const bar = document.querySelector('.p2-controls');
+      const cs = getComputedStyle(bar);
+      return {
+        floating: root.classList.contains('p2-floating-controls'),
+        visible: root.classList.contains('p2-controls-visible'),
+        absolute: cs.position === 'absolute',
+        glass: cs.backdropFilter !== 'none' || cs.webkitBackdropFilter !== 'none',
+      };
+    });
+    ok('controls: normal player uses floating overlay chrome', floatingControls.floating && floatingControls.absolute, JSON.stringify(floatingControls));
+    ok('controls: initially visible for play', floatingControls.visible, JSON.stringify(floatingControls));
     const ccPresent = await page.waitForSelector('.p2-cc-btn', { timeout: 15000 }).then(() => true).catch(() => false);
     ok('demo: CC (subtitles) menu present', ccPresent);
     ok('demo: app.css 200', assetStatus['/app.css'] === 200, String(assetStatus['/app.css']));
@@ -483,17 +498,20 @@ async function main() {
       // --- layout modes switch ---
       await p.evaluate(async () => { // leave immersive so the controls are clickable normally
         try { if (document.fullscreenElement) await document.exitFullscreen(); } catch {}
-        document.querySelector('.p2-player').classList.remove('is-maximized', 'p2-immersive', 'p2-controls-visible');
+        document.querySelector('.p2-player').classList.remove('is-maximized', 'p2-immersive');
+        document.querySelector('.p2-player').classList.add('p2-controls-visible');
         document.body.classList.remove('p2-maximized');
       });
       await p.waitForTimeout(200);
       const modeBtns = await p.$$('.p2-mode-btn');
       ok('layout: four mode buttons', modeBtns.length === 4, String(modeBtns.length));
       if (modeBtns.length === 4) {
-        await modeBtns[3].click(); // overlap
+        await p.click('.p2-fold-trigger');
+        await p.waitForTimeout(120);
+        await modeBtns[1].click(); // slides-focus
         await p.waitForTimeout(200);
         const mode = await p.evaluate(() => document.querySelector('.p2-stage')?.dataset.mode);
-        ok('layout: clicking a mode updates data-mode', mode === 'overlap', mode);
+        ok('layout: clicking a folded mode updates data-mode', mode === 'slides-focus', mode);
       }
       await p.close();
     }

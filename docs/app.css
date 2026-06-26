@@ -102,7 +102,7 @@ body {
 
 /* --- app / player --- */
 .p2-app { flex: 1; display: flex; min-height: 0; padding: 12px; }
-.p2-player { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 10px; }
+.p2-player { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 10px; position: relative; }
 
 .p2-stage {
   flex: 1; display: flex; align-items: stretch;
@@ -279,6 +279,48 @@ body {
   background: var(--panel); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 8px 12px;
 }
+.p2-player.p2-floating-controls .p2-stage { padding-bottom: 0; }
+.p2-player.p2-floating-controls .p2-controls {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 100;
+  width: min(900px, calc(100% - 28px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  transform: translate(-50%, 10px);
+  border-radius: 18px;
+  border-color: rgba(255,255,255,.16);
+  background:
+    linear-gradient(135deg, rgba(79,209,197,.16), rgba(124,107,255,.14) 46%, rgba(255,92,240,.15)),
+    rgba(10,12,17,.76);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    0 20px 48px rgba(0,0,0,.55),
+    0 0 0 1px rgba(255,255,255,.04) inset,
+    0 0 32px rgba(124,107,255,.16);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.p2-player.p2-floating-controls.p2-controls-visible .p2-controls {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+.p2-player.p2-floating-controls:not(.p2-controls-visible) { cursor: none; }
+.p2-player.p2-floating-controls .p2-btn,
+.p2-player.p2-floating-controls .p2-speed {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.14);
+}
+.p2-player.p2-floating-controls .p2-btn:hover,
+.p2-player.p2-floating-controls .p2-speed:hover,
+.p2-player.p2-floating-controls .p2-btn:focus-visible,
+.p2-player.p2-floating-controls .p2-speed:focus-visible {
+  border-color: rgba(79,209,197,.7);
+  color: var(--accent);
+}
 .p2-controls-has-preview { position: relative; }
 
 /* Scrubber hover/seek thumbnail preview — a card that floats above the bar. */
@@ -441,14 +483,9 @@ body.p2-maximized { overflow: hidden; }
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
-  z-index: 10000;
-  background: rgba(21, 24, 29, 0.92);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
-  opacity: 0;
+  width: auto;
   transform: translateY(8px);
-  pointer-events: none;
-  transition: opacity .35s ease, transform .35s ease;
+  z-index: 10000;
 }
 .p2-player.p2-immersive.p2-controls-visible .p2-controls {
   opacity: 1;
@@ -527,6 +564,12 @@ body.p2-maximized { overflow: hidden; }
   .p2-header.p2-source-open .p2-source-toggle { border-color: var(--accent); color: var(--accent); }
 
   .p2-controls { flex-wrap: wrap; gap: 8px; }
+  .p2-player.p2-floating-controls .p2-controls {
+    width: calc(100% - 12px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    padding: 7px 8px;
+    border-radius: 14px;
+  }
   .p2-scrub { order: 10; flex-basis: 100%; }
   .p2-spacer { display: none; }
   .p2-layout-group { order: 11; margin-left: auto; }
