@@ -108,12 +108,18 @@ The control bar has a **layout-mode switcher** (and `m` cycles modes; `f` toggle
 
 | Mode | What it does |
 |------|--------------|
-| **Split** (`▥`) | Slides + video side by side, with a **draggable divider** — grab the handle between the panes to resize. |
+| **Split** (`▥`) | Slides + video side by side, with a **draggable divider** — grab the handle between the panes to resize. On portrait phones the split stacks vertically and the divider becomes a horizontal grab bar dragged **up/down**. |
 | **Slides focus** (`▢`) | Slides large, video small on the side. |
 | **Video focus** (`▣`) | Video large, slides small on the side. |
 | **Overlap** (`◳`) | Slides fill the stage; the video floats as a **draggable, resizable picture-in-picture** (drag its title bar, resize from the corner grip). |
 
-Mode changes animate smoothly, and keyboard / scroll / sync keep working in every mode. The divider ratio, current mode, and PiP geometry are saved to `localStorage` and restored on the next visit; the manifest's `layout.split` / `layout.mode` set the initial defaults. The `⛶` button (or `f`) takes the whole player fullscreen via the Fullscreen API.
+The mode switcher and fullscreen button are grouped under a labelled **Layout** cluster in the control bar. Mode changes animate smoothly, and keyboard / scroll / sync keep working in every mode. The divider ratio, current mode, and PiP geometry are saved to `localStorage` and restored on the next visit; the manifest's `layout.split` / `layout.mode` set the initial defaults.
+
+The `⛶` button (or `f`) takes the whole player fullscreen. Where the browser supports the Fullscreen API it uses it; on iOS Safari — which doesn't expose fullscreen for arbitrary elements — it falls back to a CSS **maximized** full-viewport mode, so the button always works. `Esc` (or the button) exits.
+
+### On mobile
+
+The player is tuned for phones: panes use dynamic-viewport units (`dvh`/`svh`) so the iOS Safari toolbar can't break the height or cause a double scrollbar; every control is a ≥44px touch target; and the "Paste a manifest URL" bar collapses behind a small **Load URL** disclosure so the player gets the full screen. Both portrait and landscape are handled (landscape phones keep the side-by-side split).
 
 ---
 
@@ -129,7 +135,7 @@ Add caption tracks under `subtitles[]`:
 ```
 
 - Both **WebVTT** (`.vtt`) and **SubRip** (`.srt`) are accepted — `.srt` is converted to WebVTT in the browser at load. `format` is inferred from the extension if omitted.
-- For the **mp4** provider, tracks are attached as native HTML5 `<track kind="subtitles">` and rendered by the browser. For **YouTube** (whose iframe can't take external tracks), p2present renders a synced caption **overlay** driven by the sync clock.
+- For the **mp4** provider, tracks are attached as native HTML5 `<track kind="subtitles">` and rendered by the browser. For **YouTube** (whose iframe can't take external tracks), p2present renders a synced caption **overlay** driven by the sync clock — positioned centred along the bottom of the video pane (readable in every layout mode, including the overlap PiP).
 - A **CC** menu in the control bar picks the language or turns captions off; `"default": true` selects the track shown on load.
 - The bundled demo ships a couple of **sample** cues (clearly marked as samples) under `docs/content/demo/subtitles/` so the feature is demonstrable — replace them with a real transcript when you fork.
 
