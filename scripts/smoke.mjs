@@ -561,18 +561,26 @@ async function main() {
         { timeout: 12000 }).then(() => true).catch(() => false);
       if (!ytReady) {
         ok('youtube: cold-seek advances the video (skipped — API offline)', true, 'no network');
+        ok('youtube: cold-seek stays paused (skipped — API offline)', true, 'no network');
       } else {
         const t0 = await p.evaluate(() => window.__p2player.video.getTime());
-        // Cold seek to ~40% via the scrubber, never having pressed play.
+        // Cold seek to ~40% by driving the REAL scrubber element (== a user drag /
+        // click), never having pressed play. currentTime must track the slider.
         await p.evaluate(() => {
-          const v = window.__p2player.video, dur = v.getDuration();
-          window.__p2player.sync.seekToTime(dur * 0.4);
+          const s = document.querySelector('.p2-scrub');
+          s.value = '400';
+          s.dispatchEvent(new Event('input', { bubbles: true }));
         });
         const advanced = await p.waitForFunction(
           (prev) => window.__p2player.video.getTime() > prev + 5,
           t0, { timeout: 8000 }).then(() => true).catch(() => false);
         const t1 = await p.evaluate(() => window.__p2player.video.getTime());
         ok('youtube: cold-seek advances the video (not stuck at 0)', advanced, `t0=${t0?.toFixed?.(1)} -> t1=${t1?.toFixed?.(1)}`);
+        // The slider is a scrub, not a play button: a cold drag lands the frame but
+        // must NOT start playback (the kick play→pauses itself).
+        await p.waitForTimeout(800);
+        const stillPaused = await p.evaluate(() => !window.__p2player.video.isPlaying());
+        ok('youtube: cold-seek lands the frame without starting playback', stillPaused);
       }
       await p.close();
     }

@@ -52,6 +52,9 @@ export class YouTubeProvider extends BaseVideoProvider {
             resolve();
           },
           onStateChange: (e) => {
+            // Ignore the brief PLAYING/PAUSED churn from a frame-landing kick (see
+            // seek()) so the play button + state don't flicker on a paused scrub.
+            if (this._kicking) return;
             if (e.data === YT.PlayerState.PLAYING) { this._playing = true; this._everPlayed = true; this.emit('play'); }
             else if (e.data === YT.PlayerState.PAUSED) { this._playing = false; this.emit('pause'); }
             else if (e.data === YT.PlayerState.ENDED) { this._playing = false; this.emit('ended'); }
@@ -61,26 +64,39 @@ export class YouTubeProvider extends BaseVideoProvider {
     });
     this.emit('ready');
   }
-  play() { this.player?.playVideo(); }
-  pause() { this.player?.pauseVideo(); }
-  // Authoritative seek. Queue it if the player isn't ready yet, then on a cold
-  // (never-started: UNSTARTED/CUED) player kick playback so the video actually
-  // moves to the seeked position instead of sitting on the poster at 0. A player
-  // that's already playing keeps playing; a deliberately paused one stays paused.
+  play() {
+    this._wantPlaying = true;
+    clearTimeout(this._kickTimer); this._kicking = false;   // a real play cancels any pending re-pause
+    this.player?.playVideo();
+  }
+  pause() { this._wantPlaying = false; this.player?.pauseVideo(); }
+  // Authoritative seek — the slider owns the video position at all times. Queue
+  // the seek if the iframe API isn't ready yet (the scrubber can race onReady on a
+  // cold load), then seekTo(t, true). On an UNSTARTED/CUED/paused player seekTo
+  // alone won't render the target frame, so we "kick" it: play, then re-pause on
+  // the next beat — the frame at t actually shows WITHOUT starting playback. A
+  // player the user has playing (this._wantPlaying) just seeks and keeps going.
   seek(seconds) {
     if (!this._ready || !this.player?.seekTo) { this._pendingSeek = seconds; return; }
-    const YT = this._YT || window.YT;
-    let state;
-    try { state = this.player.getPlayerState?.(); } catch { state = undefined; }
     this.player.seekTo(seconds, true);
-    const PS = YT?.PlayerState;
-    const cold = !this._everPlayed
-      || (PS && (state === PS.UNSTARTED || state === PS.CUED));
-    if (cold) { try { this.player.playVideo(); } catch {} }
+    if (this._wantPlaying) return;        // already playing → seekTo continues from there
+    // Paused / cold: land the frame, then settle back to paused.
+    this._kicking = true;
+    clearTimeout(this._kickTimer);
+    try { this.player.playVideo(); } catch {}
+    this._kickTimer = setTimeout(() => {
+      if (!this._wantPlaying) { try { this.player.pauseVideo(); } catch {} }
+      // Let the PAUSED event drain before we listen to state changes again.
+      this._kickSettle = setTimeout(() => { this._kicking = false; }, 80);
+    }, 160);
   }
   getTime() { return this.player?.getCurrentTime?.() || 0; }
   getDuration() { return this.player?.getDuration?.() || 0; }
   setRate(rate) { this.player?.setPlaybackRate?.(rate); }
   isPlaying() { return !!this._playing; }
-  destroy() { super.destroy(); try { this.player?.destroy(); } catch {} }
+  destroy() {
+    super.destroy();
+    clearTimeout(this._kickTimer); clearTimeout(this._kickSettle);
+    try { this.player?.destroy(); } catch {}
+  }
 }
