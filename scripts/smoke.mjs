@@ -10,7 +10,12 @@
 //   - provider source-fallback: ipfs(dead) → mp4(local) yields a working <video>
 //   - fullscreen auto-hide overlay controls (immersive class + fixed overlay)
 //   - layout modes switch; subtitle CC menu present
-//   - responsive widths 390 / 780 / 1280
+//   - PDF demo (?p=moav-pdf): pdf.js deck renders slide 1 visibly + syncs
+//   - scrubber thumbnail preview (PDF page render) appears on hover
+//   - deep-link hash (#t=…&slide=…) opens at the right time/slide
+//   - builder (/builder/): mounts, flags invalid, validates the demo, exports
+//   - host helper (/host/): loads, IPFS pin works (Pinata mocked), WT UI present
+//   - responsive widths 390 / 780 / 1280 (player + builder + host)
 // and saves screenshots to docs/screenshots/.
 //
 // Run: npm run smoke   (node scripts/smoke.mjs)
@@ -132,8 +137,12 @@ async function main() {
       .then(() => true).catch(() => false);
     ok('demo: player stage mounts', await page.$('.p2-stage'));
     ok('demo: deck iframe present (full mount)', mounted);
-    ok('demo: controls bar present', await page.$('.p2-controls'));
-    ok('demo: CC (subtitles) menu present', await page.$('.p2-cc-btn'));
+    // The control bar (and CC menu) are built after video+deck+subs all load, so
+    // wait for it rather than racing the deck-iframe load event.
+    const controlsBuilt = await page.waitForSelector('.p2-controls', { timeout: 15000 }).then(() => true).catch(() => false);
+    ok('demo: controls bar present', controlsBuilt);
+    const ccPresent = await page.waitForSelector('.p2-cc-btn', { timeout: 15000 }).then(() => true).catch(() => false);
+    ok('demo: CC (subtitles) menu present', ccPresent);
     ok('demo: app.css 200', assetStatus['/app.css'] === 200, String(assetStatus['/app.css']));
     ok('demo: main.js 200', assetStatus['/src/main.js'] === 200, String(assetStatus['/src/main.js']));
     ok('demo: resolve.js 200', assetStatus['/src/resolve.js'] === 200, String(assetStatus['/src/resolve.js']));
@@ -255,6 +264,129 @@ async function main() {
       const noStub = !/coming soon|phase-2 feature|not yet implemented/i.test(status);
       ok(`p2p ${label}: routed (no 'coming soon' stub)`, noStub, status.slice(0, 60));
       await p.screenshot({ path: path.join(SHOTS, shot) });
+      await p.close();
+    }
+
+    // === 5. PDF demo (pdf.js deck adapter) renders + syncs ===
+    {
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/?p=moav-pdf`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-pdf-stage', { timeout: 30000 }).catch(() => {});
+      // Wait for slide 1 to actually be rendered + visible (not display:none).
+      const visible = await p.waitForFunction(() => {
+        const c = document.querySelector('.p2-pdf-page');
+        return c && c.style.display !== 'none' && c.width > 0;
+      }, { timeout: 30000 }).then(() => true).catch(() => false);
+      ok('pdf demo: slide 1 canvas renders visibly', visible);
+      // Sync: advancing the deck via the Next button updates the counter.
+      const before = await p.evaluate(() => document.querySelector('.p2-slidecount')?.textContent);
+      await p.click('.p2-btn[aria-label^="Next"]');
+      await p.waitForTimeout(700);
+      const after = await p.evaluate(() => document.querySelector('.p2-slidecount')?.textContent);
+      ok('pdf demo: next-slide advances the deck', !!after && after !== before, `${before} -> ${after}`);
+      await p.waitForTimeout(500);
+      await p.screenshot({ path: path.join(SHOTS, 'pdf-demo.png') });
+
+      // --- scrubber thumbnail preview (PDF renders real page thumbnails) ---
+      const box = await p.$eval('.p2-scrub', (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+      await p.mouse.move(box.x + box.w * 0.55, box.y + box.h / 2);
+      await p.waitForTimeout(1400);
+      const prev = await p.evaluate(() => {
+        const pv = document.querySelector('.p2-scrub-preview');
+        return {
+          vis: pv?.classList.contains('is-visible'),
+          hasImg: pv?.classList.contains('has-img'),
+          cap: pv?.querySelector('.p2-preview-cap')?.textContent || '',
+          img: pv?.querySelector('.p2-preview-img')?.getAttribute('src') || '',
+        };
+      });
+      ok('scrubber: preview visible on hover', !!prev.vis);
+      ok('scrubber: preview caption names a slide', /Slide \d/.test(prev.cap), prev.cap);
+      ok('scrubber: PDF thumbnail image shown', prev.hasImg && /^data:image\//.test(prev.img));
+      await p.close();
+    }
+
+    // === 6. Deep-link hash opens the player at the right time/slide ===
+    {
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/?p=demo#t=575&slide=13`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-deck-frame', { timeout: 30000 }).catch(() => {});
+      const atSlide = await p.waitForFunction(
+        () => /\b13 \//.test(document.querySelector('.p2-slidecount')?.textContent || ''),
+        { timeout: 15000 }).then(() => true).catch(() => false);
+      ok('deeplink: #t=575&slide=13 opens at slide 13', atSlide);
+      // The "this spot" share button is present + enabled.
+      ok('deeplink: "this spot" share button present', await p.$('#share-spot-btn'));
+      await p.close();
+    }
+
+    // === 7. Builder: validates + exports ===
+    {
+      const p = await newPage(context);
+      await p.goto(`${ORIGIN}/builder/`, { waitUntil: 'load' });
+      await p.waitForSelector('.p2-form', { timeout: 15000 });
+      ok('builder: form mounts', await p.$('.p2-form'));
+      // Blank → invalid; Load demo → valid.
+      const blankBadge = await p.evaluate(() => document.getElementById('valid-badge')?.textContent || '');
+      ok('builder: blank manifest flagged invalid', /issue/i.test(blankBadge), blankBadge);
+      await p.click('#load-demo');
+      const valid = await p.waitForFunction(
+        () => /valid/i.test(document.getElementById('valid-badge')?.textContent || ''),
+        { timeout: 10000 }).then(() => true).catch(() => false);
+      ok('builder: demo loads + validates against schema', valid);
+      const exported = await p.evaluate(() => {
+        try { const m = JSON.parse(document.querySelector('#json code').textContent); return !!(m.video && m.deck && Array.isArray(m.timing)); }
+        catch { return false; }
+      });
+      ok('builder: exports a structured manifest (video+deck+timing)', exported);
+      // Responsive: the two-column layout collapses to one column on narrow widths.
+      for (const w of [1280, 780, 390]) {
+        await p.setViewportSize({ width: w, height: 800 });
+        await p.waitForTimeout(250);
+        await p.screenshot({ path: path.join(SHOTS, `builder-${w}.png`) });
+      }
+      const noHScroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2);
+      ok('builder: no horizontal overflow at 390px', noHScroll);
+      ok('builder: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
+      await p.close();
+    }
+
+    // === 8. Host helper: loads; IPFS pin works (mocked); WT UI present ===
+    {
+      const p = await newPage(context);
+      // Mock the Pinata pin endpoint so we never hit the network / need a token.
+      await p.route('https://api.pinata.cloud/**', (r) => r.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ IpfsHash: 'bafkreitestcidmock0000000000000000000000000000000000000000' }),
+      }));
+      await p.goto(`${ORIGIN}/host/`, { waitUntil: 'load' });
+      await p.waitForSelector('#ipfs-provider', { timeout: 15000 });
+      ok('host: page loads (IPFS + WebTorrent cards)', (await p.$$('.p2-card')).length >= 2);
+      ok('host: WebTorrent trackers prefilled', (await p.inputValue('#wt-trackers')).includes('wss://'));
+      // Upload with no token → friendly prompt (no crash).
+      await p.setInputFiles('#ipfs-file', { name: 'note.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
+      await p.click('#ipfs-upload');
+      await p.waitForTimeout(300);
+      ok('host: upload without token prompts for one', /token/i.test(await p.textContent('#ipfs-status')));
+      // With a (fake) token → mocked CID shown + handoff persisted.
+      await p.fill('#ipfs-token', 'FAKEJWT');
+      await p.click('#ipfs-upload');
+      const pinned = await p.waitForFunction(
+        () => !document.getElementById('ipfs-result').hidden,
+        { timeout: 10000 }).then(() => true).catch(() => false);
+      ok('host: IPFS pin (mock) shows a CID result', pinned);
+      const ref = await p.evaluate(() => document.querySelector('#ipfs-result .is-ref')?.textContent || '');
+      ok('host: result is an ipfs:// reference', ref.startsWith('ipfs://bafk'), ref);
+      const handoff = await p.evaluate(() => { try { return JSON.parse(localStorage.getItem('p2present:hosted'))?.[0]?.ref || ''; } catch { return ''; } });
+      ok('host: reference saved for the builder handoff', handoff.startsWith('ipfs://'));
+      for (const w of [1280, 780, 390]) {
+        await p.setViewportSize({ width: w, height: 800 });
+        await p.waitForTimeout(250);
+        await p.screenshot({ path: path.join(SHOTS, `host-${w}.png`) });
+      }
+      const noHScroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2);
+      ok('host: no horizontal overflow at 390px', noHScroll);
+      ok('host: no same-origin console errors', p._consoleErrors.length === 0, p._consoleErrors.slice(0, 2).join(' | '));
       await p.close();
     }
 
