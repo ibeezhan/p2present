@@ -25,62 +25,92 @@
 </head>
 <body>
   <header class="p2-header p2-shell-collapsed">
+    <!-- Brand block stays visible while collapsed: logo + name + the talk title
+         and its signed/unsigned badge. Hovering / focusing the header reveals the
+         control cluster on the right — so the title is always readable and the
+         reveal never changes the header's height (no page jump). -->
     <div class="p2-brand">
-      <button class="p2-home" id="brand-toggle" type="button" title="Toggle player header controls" aria-label="Toggle player header controls"><img class="p2-logo" src="../brand/icon-32.png" width="32" height="32" alt="" /></button>
+      <button class="p2-home" id="brand-toggle" type="button" title="Expand player controls" aria-label="Expand player controls"><img class="p2-logo" src="../brand/icon-32.png" width="32" height="32" alt="" /></button>
       <button class="p2-shell-toggle" id="shell-toggle" type="button" aria-expanded="false" aria-label="Show player header controls" title="Show player header controls">
         <span class="p2-name">p2present</span>
       </button>
       <span class="p2-deck-title" id="deck-title"></span>
       <span class="p2-sig-badge" id="sig-badge" hidden></span>
     </div>
-    <nav class="p2-tools" aria-label="Player tools">
-      <a class="p2-tool" href="../builder/" title="Builder" aria-label="Builder">🛠</a>
-      <a class="p2-tool" href="../host/" title="Host assets" aria-label="Host assets">📤</a>
-      <a class="p2-tool" href="../docs/" title="Docs" aria-label="Docs">?</a>
-    </nav>
-    <button
-      type="button"
-      class="p2-source-toggle"
-      id="source-toggle"
-      aria-expanded="false"
-      aria-controls="source-form"
-      aria-label="Load a presentation from a URL"
-      title="Load a presentation from a URL"
-    ><span class="p2-icon" aria-hidden="true">↧</span></button>
-    <form class="p2-source" id="source-form">
-      <input
-        id="source-input"
-        type="text"
-        inputmode="url"
-        spellcheck="false"
-        placeholder="Paste a source — https://…/p2present.json · ipfs://CID · magnet:?xt=…"
-        aria-label="Presentation source URL, IPFS CID, or magnet link"
-      />
-      <button type="submit" class="p2-load p2-load-icon" title="Load source" aria-label="Load source">↵</button>
-    </form>
-    <div class="p2-actions">
-      <button
-        type="button"
-        class="p2-load p2-save"
-        id="save-btn"
-        title="Upload this presentation to the sharing service"
-        aria-label="Upload presentation"
-      >⇧</button>
-      <div class="p2-share-wrap">
+
+    <!-- Everything that folds away when collapsed lives in one cluster. -->
+    <div class="p2-cluster">
+      <nav class="p2-tools" aria-label="Player tools">
+        <a class="p2-tool" href="../builder/" title="Builder — make a presentation" aria-label="Builder">
+          <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 6.4a3.8 3.8 0 0 0-5 4.9L4 16.9V20h3.1l5.6-5.6a3.8 3.8 0 0 0 4.9-5l-2.6 2.6-2.1-.6-.6-2.1z"/></svg>
+          <span class="p2-tool-label">Builder</span>
+        </a>
+        <a class="p2-tool" href="../host/" title="Host assets — upload your slides &amp; video" aria-label="Host assets">
+          <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8.5 7.5M12 4l3.5 3.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+          <span class="p2-tool-label">Host</span>
+        </a>
+        <a class="p2-tool" href="../docs/" title="Docs — how it works" aria-label="Docs">
+          <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15.5H6.5A1.5 1.5 0 0 0 5 20z"/><path d="M9 8h6M9 11.5h6"/></svg>
+          <span class="p2-tool-label">Docs</span>
+        </a>
+      </nav>
+
+      <div class="p2-actions">
         <button
           type="button"
-          class="p2-load p2-share"
-          id="share-btn"
-          aria-haspopup="true"
+          class="p2-act p2-act-load"
+          id="source-toggle"
           aria-expanded="false"
-          aria-controls="share-menu"
-          title="Share or export this presentation"
-          aria-label="Share or export this presentation"
-        >☍</button>
-        <div class="p2-share-menu" id="share-menu" role="menu" hidden>
-          <button type="button" class="p2-share-item" id="share-whole" role="menuitem"><span>Copy presentation link</span></button>
-          <button type="button" class="p2-share-item" id="share-moment" role="menuitem"><span>Copy link to this moment</span></button>
-          <button type="button" class="p2-share-item" id="export-json" role="menuitem"><span>Export manifest JSON</span></button>
+          aria-controls="source-form"
+          aria-label="Load a presentation from a link"
+          title="Load a presentation from a link, IPFS CID, or magnet"
+        >
+          <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5l5-5"/><path d="M11 7l1-1a4 4 0 0 1 5.7 5.7l-1 1"/><path d="M13 17l-1 1A4 4 0 0 1 6.3 12.3l1-1"/></svg>
+          <span class="p2-act-label">Load</span>
+        </button>
+
+        <form class="p2-source" id="source-form">
+          <input
+            id="source-input"
+            type="text"
+            inputmode="url"
+            spellcheck="false"
+            placeholder="Paste a source — https://…/p2present.json · ipfs://CID · magnet:?xt=…"
+            aria-label="Presentation source URL, IPFS CID, or magnet link"
+          />
+          <button type="submit" class="p2-load p2-load-icon" title="Load source" aria-label="Load source">↵</button>
+        </form>
+
+        <button
+          type="button"
+          class="p2-act p2-act-save"
+          id="save-btn"
+          title="Save &amp; publish — get a permanent shareable link"
+          aria-label="Save and publish this presentation"
+        >
+          <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V7m0 0L9 10m3-3 3 3"/><path d="M7.5 19a4.5 4.5 0 0 1-1.2-8.8 5.5 5.5 0 0 1 10.6-1.4A4 4 0 0 1 17 19z"/></svg>
+          <span class="p2-act-label">Save</span>
+        </button>
+
+        <div class="p2-share-wrap">
+          <button
+            type="button"
+            class="p2-act p2-act-share"
+            id="share-btn"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="share-menu"
+            title="Share or export this presentation"
+            aria-label="Share or export this presentation"
+          >
+            <svg class="p2-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.8l6.6-3.8M8.7 13.2l6.6 3.8"/></svg>
+            <span class="p2-act-label">Share</span>
+          </button>
+          <div class="p2-share-menu" id="share-menu" role="menu" hidden>
+            <button type="button" class="p2-share-item" id="share-whole" role="menuitem"><span>Copy presentation link</span></button>
+            <button type="button" class="p2-share-item" id="share-moment" role="menuitem"><span>Copy link to this moment</span></button>
+            <button type="button" class="p2-share-item" id="export-json" role="menuitem"><span>Export manifest JSON</span></button>
+          </div>
         </div>
       </div>
     </div>

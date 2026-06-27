@@ -31,14 +31,18 @@ body {
   min-height: 100dvh;
 }
 
-/* --- header / resolver --- */
+/* --- header / resolver ---
+   Two zones: a persistent brand block (logo · name · talk title · sig badge) and
+   a foldaway control cluster. Collapsed → only the brand shows and the bar sizes
+   to it; hover/focus/pin → the cluster unfolds to the right. Height never changes,
+   so revealing the controls never pushes the player down (no page jump). */
 .p2-header {
-  display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto;
-  align-items: center; gap: 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: 10px;
   width: max-content;
   max-width: calc(100vw - 20px);
   margin: 8px 0 0 8px;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 10px;
   background:
     linear-gradient(135deg, rgba(79,209,197,.08), rgba(124,107,255,.06) 50%, rgba(255,92,240,.07)),
     rgba(13,15,18,.86);
@@ -55,6 +59,11 @@ body {
 .p2-header:hover,
 .p2-header:focus-within {
   width: min(1180px, calc(100vw - 16px));
+}
+/* the foldaway cluster */
+.p2-cluster {
+  display: inline-flex; align-items: center; gap: 10px; min-width: 0;
+  transition: opacity .26s ease, transform .3s var(--ease), max-width .34s var(--ease);
 }
 .p2-brand { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; }
 .p2-logo, .p2-home img { width: 27px; height: 27px; border-radius: 8px; object-fit: contain; display: block; }
@@ -94,51 +103,64 @@ body {
 .p2-sig-badge.is-invalid { color: var(--error); border-color: var(--error); }
 @media (max-width: 560px) { .p2-sig-badge.is-unsigned { display: none; } }
 
+/* shared line-icon sizing for the header glyphs */
+.p2-ico {
+  width: 17px; height: 17px; flex: none; display: block;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* secondary tool group (Builder / Host / Docs) — icon-only chips with tooltips */
 .p2-tools {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
   padding: 3px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px;
   background: rgba(255,255,255,.035);
 }
 .p2-tool {
-  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
-  color: var(--fg); text-decoration: none; font-size: 15px;
+  display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
+  color: var(--muted); text-decoration: none;
   border: 1px solid transparent;
 }
 .p2-tool:hover, .p2-tool:focus-visible {
-  border-color: rgba(79,209,197,.65); color: var(--accent); outline: none; text-decoration: none;
+  border-color: rgba(79,209,197,.5); color: var(--accent); outline: none; text-decoration: none;
   background: rgba(79,209,197,.08);
 }
+.p2-tool-label { display: none; }
 
+/* primary actions (Load / Save / Share) — labelled pill buttons */
+.p2-actions { display: inline-flex; align-items: center; gap: 7px; }
+.p2-act {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  padding: 7px 13px 7px 11px; border-radius: 12px; cursor: pointer;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.1px;
+  color: var(--fg); background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.11);
+}
+.p2-act:hover { border-color: var(--accent); color: var(--accent); }
+.p2-act:focus-visible { outline: 2px solid var(--accent-dim); outline-offset: 1px; }
+.p2-act-label { line-height: 1; }
+/* Save & Share are the headline actions — give them the brand accent edge */
+.p2-act-save { color: var(--accent); border-color: var(--accent-dim); background: rgba(79,209,197,.10); }
+.p2-act-save:hover { background: rgba(79,209,197,.16); }
+.p2-act-share { background: rgba(124,107,255,.12); border-color: rgba(124,107,255,.4); }
+.p2-act-share:hover { color: #cdc6ff; border-color: var(--violet); background: rgba(124,107,255,.2); }
+.p2-act:disabled { opacity: 0.4; cursor: default; }
+.p2-act:disabled:hover { border-color: rgba(255,255,255,.11); color: var(--fg); }
+.p2-act-save:disabled:hover { color: var(--accent); border-color: var(--accent-dim); background: rgba(79,209,197,.10); }
+.p2-act-share:disabled:hover { color: var(--fg); }
+
+.p2-tool, .p2-act { transition: transform .18s var(--ease), background .18s ease, border-color .18s ease, color .18s ease; }
+.p2-tool:hover, .p2-act:hover { transform: translateY(-1px); }
+
+/* the source/"Load" form: drops inline to the cluster's own row when opened */
 .p2-source {
-  display: none; grid-template-columns: minmax(180px, 30vw) auto;
-  gap: 8px; min-width: 0; justify-self: stretch;
-  transform-origin: right center;
-  transition: opacity .24s ease, transform .28s var(--ease), max-width .32s var(--ease);
+  display: none; grid-template-columns: minmax(180px, 32vw) auto;
+  gap: 8px; min-width: 0; order: 5; flex-basis: 100%;
+  transform-origin: left center;
+  transition: opacity .24s ease, transform .28s var(--ease);
 }
+.p2-header.p2-source-open .p2-cluster { flex-wrap: wrap; }
 .p2-header.p2-source-open .p2-source { display: grid; }
-.p2-actions { display: inline-flex; align-items: center; gap: 8px; }
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) {
-  grid-template-columns: 30px;
-  width: 44px; max-width: 44px;
-  padding-right: 6px;
-  border-radius: 0 16px 16px 0;
-  transform: translateX(-8px);
-}
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source {
-  max-width: 0; opacity: 0; transform: translateX(12px) scaleX(.92);
-  overflow: hidden; pointer-events: none;
-}
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-tools,
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source-toggle,
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-actions,
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-name,
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-deck-title,
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-sig-badge {
-  display: none;
-}
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-logo {
-  animation: p2LogoJiggle 1.9s ease-in-out infinite;
-}
 .p2-source input {
   flex: 1; min-width: 0;
   background: rgba(255,255,255,.055); color: var(--fg);
@@ -156,13 +178,19 @@ body {
   display: grid; place-items: center;
   font-weight: 650; padding: 7px 10px; min-width: 38px; border-radius: 12px;
   background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.11);
+  transition: transform .18s var(--ease), background .18s ease, border-color .18s ease, color .18s ease;
 }
-.p2-tool, .p2-load, .p2-source-toggle { transition: transform .18s var(--ease), background .18s ease, border-color .18s ease, color .18s ease; }
-.p2-tool:hover, .p2-load:hover, .p2-source-toggle:hover { transform: translateY(-1px); }
+.p2-load:hover { transform: translateY(-1px); }
 .p2-load-icon { color: var(--accent); }
-.p2-share, .p2-save { white-space: nowrap; }
-.p2-share:disabled, .p2-save:disabled { opacity: 0.45; cursor: default; }
-.p2-share:disabled:hover, .p2-save:disabled:hover { border-color: var(--line); color: var(--fg); }
+
+/* --- collapsed: brand stays, the control cluster folds away (height unchanged) --- */
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-cluster {
+  max-width: 0; opacity: 0; transform: translateX(14px) scaleX(.96);
+  overflow: hidden; pointer-events: none;
+}
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) {
+  padding-right: 12px;
+}
 
 /* Share popover (YouTube-style "copy link / copy link at current time"). */
 .p2-share-wrap { position: relative; display: inline-flex; }
@@ -222,12 +250,6 @@ body {
 @keyframes p2ToastIn { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes p2ToastOut { to { opacity: 0; transform: translateY(-6px) scale(.98); } }
 @keyframes p2Spin { to { transform: rotate(360deg); } }
-@keyframes p2LogoJiggle {
-  0%, 72%, 100% { transform: rotate(0deg) scale(1); }
-  78% { transform: rotate(-5deg) scale(1.04); }
-  84% { transform: rotate(5deg) scale(1.04); }
-  90% { transform: rotate(-3deg) scale(1.02); }
-}
 
 /* --- app / player --- */
 .p2-app { flex: 1; display: flex; min-height: 0; padding: 12px; }
@@ -557,17 +579,6 @@ body {
   .p2-fold-item .p2-btn-label { display: block; }
 }
 
-/* resolver disclosure toggle (mobile only — desktop keeps the bar inline) */
-.p2-source-toggle {
-  display: inline-flex;
-  background: var(--panel-2); color: var(--fg);
-  border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 7px 10px; min-width: 38px; justify-content: center;
-  cursor: pointer; font-size: 15px; font-weight: 700;
-  align-items: center; gap: 6px; white-space: nowrap;
-}
-.p2-source-toggle:hover { border-color: var(--accent); color: var(--accent); }
-
 /* CC menu */
 .p2-cc { position: relative; }
 .p2-cc-btn { font-weight: 600; letter-spacing: 0.05em; }
@@ -684,59 +695,27 @@ body.p2-maximized { overflow: hidden; }
 
   /* Full-bleed: trim chrome so the player owns the viewport. */
   .p2-header {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
     width: calc(100vw - 12px);
     max-width: calc(100vw - 12px);
     margin: 6px 6px 0;
-    padding: 6px 7px; gap: 7px;
+    padding: 6px 8px; gap: 8px;
     border-radius: 16px;
   }
   .p2-brand { min-width: 0; }
   .p2-name { display: none; }
-  .p2-deck-title { max-width: 32vw; font-size: 12px; }
+  .p2-deck-title { max-width: 38vw; font-size: 12px; }
   .p2-tools { gap: 3px; padding: 2px; }
-  .p2-tool { width: 31px; height: 31px; border-radius: 10px; font-size: 14px; }
+  .p2-tool { width: 31px; height: 31px; border-radius: 10px; }
   .p2-app { padding: 6px; }
   .p2-player { gap: 6px; }
   .p2-footer { display: none; }
 
-  /* The "Paste a manifest URL" bar eats vertical space — collapse it behind a
-     small disclosure button; tapping it reveals the form on its own row. */
-  .p2-source-toggle { display: inline-flex; }
-  .p2-header .p2-source {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto;
-    display: none;
-    max-width: none; opacity: 1; transform: none; pointer-events: auto;
-  }
-  .p2-actions { gap: 6px; }
-  .p2-header.p2-source-open .p2-source { display: grid; }
-  .p2-header.p2-source-open .p2-source-toggle { border-color: var(--accent); color: var(--accent); }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    width: calc(100vw - 12px);
-    max-width: calc(100vw - 12px);
-    margin-left: 6px;
-    transform: none;
-    border-radius: 16px;
-  }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-tools,
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source-toggle,
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-actions {
-    display: inline-flex;
-  }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-deck-title {
-    display: block;
-  }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-name {
-    display: none;
-  }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-logo {
-    animation: none;
-  }
-  .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source {
-    display: none;
-  }
+  /* No hover on touch: the brand (logo + title + badge) stays put while collapsed
+     and tapping the logo/name pins the cluster open. The "Load" form drops to its
+     own row when opened. */
+  .p2-cluster { gap: 7px; }
+  .p2-act { padding: 8px 11px; }
+  .p2-source { grid-template-columns: minmax(0, 1fr) auto; }
   .p2-status { top: 60px; right: 8px; width: min(390px, calc(100vw - 16px)); }
 
   .p2-controls { flex-wrap: wrap; gap: 8px; }
@@ -763,9 +742,15 @@ body.p2-maximized { overflow: hidden; }
   .p2-group-label { display: none; }
 }
 
+/* On smaller phones drop the action labels — the icons carry the meaning. */
+@media (max-width: 560px) {
+  .p2-act-label { display: none; }
+  .p2-act { padding: 8px; }
+}
+
 /* Touch devices: every interactive control gets a >=44px tap target. */
 @media (pointer: coarse) {
-  .p2-btn, .p2-load, .p2-speed, .p2-mode-btn, .p2-source-toggle {
+  .p2-btn, .p2-load, .p2-speed, .p2-mode-btn, .p2-act {
     min-height: 44px; min-width: 44px;
   }
   .p2-scrub { height: 28px; }
