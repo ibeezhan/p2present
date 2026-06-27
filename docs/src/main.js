@@ -44,6 +44,7 @@ const $share = document.getElementById('share-btn');
 const $shareMenu = document.getElementById('share-menu');
 const $shareWhole = document.getElementById('share-whole');
 const $shareMoment = document.getElementById('share-moment');
+const $exportJson = document.getElementById('export-json');
 const $save = document.getElementById('save-btn');
 const $sigBadge = document.getElementById('sig-badge');
 
@@ -279,6 +280,22 @@ if ($share) {
 }
 if ($shareWhole) $shareWhole.addEventListener('click', () => { copyShareLink(false); openShareMenu(false); });
 if ($shareMoment) $shareMoment.addEventListener('click', () => { copyShareLink(true); openShareMenu(false); });
+if ($exportJson) $exportJson.addEventListener('click', () => { exportManifestJson(); openShareMenu(false); });
+
+function exportManifestJson() {
+  if (!currentRaw) { setStatus('Nothing to export yet.', true); return; }
+  const title = ($title?.textContent || 'p2present').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'p2present';
+  const blob = new Blob([JSON.stringify(currentRaw, null, 2) + '\n'], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${title}.p2present.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  setStatus('Manifest JSON exported.');
+}
 
 // "Save & share" — POST the current manifest to the pastebin backend and get a
 // short p2present.com/p/<id> link back (copied to the clipboard). The edit token

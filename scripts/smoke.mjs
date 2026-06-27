@@ -611,6 +611,7 @@ async function main() {
       const p = await newPage(context);
       await p.goto(`${ORIGIN}/app/`, { waitUntil: 'load' });
       // Open the source bar + type the p2p source, submit.
+      await p.click('#brand-toggle'); // desktop header starts as a collapsed logo pill
       await p.click('#source-toggle');
       await p.fill('#source-input', src);
       // Capture the loading state shortly after submit.
@@ -747,11 +748,12 @@ async function main() {
       await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN }).catch(() => {});
       await p.evaluate(() => { window.__copied = []; const o = navigator.clipboard.writeText.bind(navigator.clipboard); navigator.clipboard.writeText = (t) => { window.__copied.push(t); return o(t); }; });
       ok('share: standalone "this spot" button removed', !(await p.$('#share-spot-btn')));
+      await p.click('#brand-toggle');
       await p.click('#share-btn');
       const menuOpen = await p.evaluate(() => !document.getElementById('share-menu').hidden && document.getElementById('share-btn').getAttribute('aria-expanded') === 'true');
       ok('share: button opens a popover menu', menuOpen);
       const items = await p.evaluate(() => [...document.querySelectorAll('.p2-share-item')].map((b) => b.textContent.trim()));
-      ok('share: menu offers presentation link + this-moment', items.length === 2 && /presentation/i.test(items[0]) && /moment/i.test(items[1]), items.join(' | '));
+      ok('share: menu offers presentation link + this-moment + export', items.length === 3 && /presentation/i.test(items[0]) && /moment/i.test(items[1]) && /export/i.test(items[2]), items.join(' | '));
       // "Copy link to this moment" → a #t=…&slide=… deep-link.
       await p.click('#share-moment');
       await p.waitForTimeout(150);
@@ -779,6 +781,7 @@ async function main() {
         { timeout: 15000 }).then(() => true).catch(() => false);
       ok('save: "Save & share" button enabled once a manifest is loaded', saveEnabled);
       await p.evaluate(() => { window.__copied = []; const o = navigator.clipboard.writeText.bind(navigator.clipboard); navigator.clipboard.writeText = (t) => { window.__copied.push(t); return o(t); }; });
+      await p.click('#brand-toggle');
       await p.click('#save-btn');
       const savedMsg = await p.waitForFunction(
         () => /\/p\/smoke01/.test(document.getElementById('status')?.textContent || ''),
