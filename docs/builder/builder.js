@@ -305,6 +305,107 @@ function fillStatic() {
   $('f-transition').value = state.layout.transition || 'fade';
 }
 
+// --- simple view (guided: video → slides → chapters → capture) --------------
+
+function inferVideoProvider(url) {
+  const s = String(url || '').trim().toLowerCase();
+  if (!s) return 'youtube';
+  if (s.startsWith('magnet:')) return 'webtorrent';
+  if (s.startsWith('ipfs://')) return 'ipfs';
+  if (/youtube\.com|youtu\.be/.test(s) || /^[\w-]{11}$/.test(String(url).trim())) return 'youtube';
+  return 'mp4';  // any other http(s) file
+}
+const VIDEO_KIND = { youtube: 'YouTube', mp4: 'MP4 / direct file', webtorrent: 'WebTorrent magnet', ipfs: 'IPFS' };
+
+function bindSimple() {
+  $('s-title').addEventListener('input', () => { state.title = $('s-title').value; $('f-title').value = state.title; updatePreview(); });
+  $('s-video').addEventListener('input', () => {
+    const url = $('s-video').value;
+    if (!state.video.sources.length) state.video.sources = [{ provider: 'youtube', src: '' }];
+    state.video.sources[0].src = url;
+    state.video.sources[0].provider = inferVideoProvider(url);
+    $('s-video-kind').textContent = url.trim() ? `Detected: ${VIDEO_KIND[state.video.sources[0].provider]}` : '';
+    renderVideo(); updatePreview();
+  });
+  $('s-deck-type').addEventListener('change', () => { state.deck.type = $('s-deck-type').value; $('f-deck-type').value = state.deck.type; renderDeck(); updatePreview(); });
+  $('s-deck').addEventListener('input', () => {
+    if (!state.deck.sources.length) state.deck.sources = [{ protocol: 'https', src: '' }];
+    state.deck.sources[0].src = $('s-deck').value;
+    state.deck.sources[0].protocol = inferProtocol($('s-deck').value);
+    renderDeck(); updatePreview();
+  });
+  $('s-chapters-apply').addEventListener('click', applyChapters);
+  $('s-chapters-auto').addEventListener('click', autoDetectChapters);
+}
+
+function fillSimple() {
+  $('s-title').value = state.title || '';
+  $('s-video').value = state.video.sources?.[0]?.src || '';
+  $('s-deck').value = state.deck.sources?.[0]?.src || '';
+  $('s-deck-type').value = state.deck.type || 'pdf';
+  const p = state.video.sources?.[0]?.provider;
+  $('s-video-kind').textContent = ($('s-video').value.trim() && p) ? `Detected: ${VIDEO_KIND[p] || p}` : '';
+}
+
+function setView(simple) {
+  $('builder-main').classList.toggle('is-simple', simple);
+  $('mode-simple').classList.toggle('is-on', simple);
+  $('mode-advanced').classList.toggle('is-on', !simple);
+  $('mode-simple').setAttribute('aria-selected', String(simple));
+  $('mode-advanced').setAttribute('aria-selected', String(!simple));
+  if (simple) fillSimple(); else { fillStatic(); renderAllLists(); }
+}
+
+// Parse a pasted chapter list ("0:00 Intro", "1:23 - Topic", "1:02:03 Title") into
+// timing cues — one slide per chapter, the chapter title as the cue label.
+function parseChapters(text) {
+  const cues = [];
+  for (const line of String(text).split('\n')) {
+    const m = line.match(/(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?)\s*[-–—).:]?\s*(.*)$/);
+    if (!m || !Number.isFinite(toSeconds(m[1]))) continue;
+    cues.push({ time: m[1], slide: cues.length + 1, transition: 'cut', label: (m[2] || '').trim() });
+  }
+  return cues;
+}
+function applyChapters() {
+  const cues = parseChapters($('s-chapters').value);
+  if (!cues.length) { $('s-chapters-status').textContent = 'No “M:SS Title” lines found.'; return; }
+  state.timing = cues;
+  renderTiming(); updatePreview();
+  $('s-chapters-status').textContent = `Added ${cues.length} cue${cues.length > 1 ? 's' : ''} (one slide each) — refine with capture below.`;
+}
+
+// Best-effort chapter auto-detect. A pure-static page can't read a YouTube video's
+// chapters (they live in the description, behind CORS), so this only succeeds when
+// the optional service exposes a /chapters proxy; otherwise it falls back to paste.
+async function fetchChapters(videoUrl) {
+  const base = (window.P2PRESENT_SERVICE || '').replace(/\/$/, '');
+  if (!base) return null;
+  const res = await fetch(`${base}/chapters?u=${encodeURIComponent(videoUrl)}`, { headers: { accept: 'application/json' } });
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null);
+  const list = Array.isArray(data?.chapters) ? data.chapters : (Array.isArray(data) ? data : null);
+  return list && list.length ? list : null;
+}
+async function autoDetectChapters() {
+  const url = ($('s-video').value || '').trim();
+  const status = $('s-chapters-status');
+  if (!url) { status.textContent = 'Add a video URL first.'; return; }
+  status.textContent = 'Looking for chapters…';
+  try {
+    const chapters = await fetchChapters(url);
+    if (chapters) {
+      $('s-chapters').value = chapters.map((c) => `${c.time || fmtClock(c.start || 0)} ${c.label || c.title || ''}`.trim()).join('\n');
+      status.textContent = `Found ${chapters.length} chapters — review, then “Use these as timing”.`;
+      return;
+    }
+    status.textContent = 'No auto-source available — paste chapters below (copy them from the video description).';
+  } catch {
+    status.textContent = 'Auto-detect needs the optional service — paste chapters below instead.';
+  }
+  $('s-chapters').focus();
+}
+
 // --- preview + validation ---------------------------------------------------
 
 let lastManifest = null;
@@ -455,7 +556,7 @@ function loadState(raw) {
     try { s.sigPayload = signingString(raw, { alg: raw.sig.alg, signer: raw.sig.signer }); } catch { s.sigPayload = null; }
   }
   state = s;
-  fillStatic(); renderAllLists(); updatePreview();
+  fillStatic(); fillSimple(); renderAllLists(); updatePreview();
 }
 const str = (v) => (typeof v === 'string' ? v : (v == null ? '' : String(v)));
 const arr = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
@@ -577,12 +678,16 @@ function init() {
   // schema is fetched in the background (don't await it before wiring handlers,
   // or a fast click during that fetch is lost on a slow network).
   bindStatic();
-  fillStatic(); renderAllLists(); updatePreview();
+  bindSimple();
+  fillStatic(); fillSimple(); renderAllLists(); updatePreview();
   renderHosted();
+
+  $('mode-simple').addEventListener('click', () => setView(true));
+  $('mode-advanced').addEventListener('click', () => setView(false));
 
   document.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => addRow(b.dataset.add)));
   $('load-demo').addEventListener('click', loadDemo);
-  $('reset-blank').addEventListener('click', () => { state = blankState(); fillStatic(); renderAllLists(); updatePreview(); });
+  $('reset-blank').addEventListener('click', () => { state = blankState(); fillStatic(); fillSimple(); renderAllLists(); updatePreview(); });
   $('load-file').addEventListener('change', async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
     try { loadState(JSON.parse(await file.text())); } catch (err) { alert('Invalid JSON: ' + err.message); }

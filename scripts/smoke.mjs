@@ -813,6 +813,16 @@ async function main() {
       await p.goto(`${ORIGIN}/builder/`, { waitUntil: 'load' });
       await p.waitForSelector('.p2-form', { timeout: 15000 });
       ok('builder: form mounts', await p.$('.p2-form'));
+      // Default view is the guided Simple flow; the advanced cards are hidden.
+      const simpleDefault = await p.evaluate(() =>
+        !!document.getElementById('s-video') &&
+        getComputedStyle(document.querySelector('.p2-adv')).display === 'none');
+      ok('builder: simple view is the default (guided fields; advanced hidden)', simpleDefault);
+      // Switch to Advanced for the field-level checks below.
+      await p.click('#mode-advanced');
+      await p.waitForTimeout(150);
+      const advShown = await p.evaluate(() => getComputedStyle(document.querySelector('.p2-adv')).display !== 'none');
+      ok('builder: advanced view reveals the full form', advShown);
       // Blank → invalid; Load demo → valid.
       const blankBadge = await p.evaluate(() => document.getElementById('valid-badge')?.textContent || '');
       ok('builder: blank manifest flagged invalid', /issue/i.test(blankBadge), blankBadge);
@@ -974,6 +984,7 @@ async function main() {
       const p = await newPage(context);
       await p.goto(`${ORIGIN}/builder/`, { waitUntil: 'load' });
       await p.waitForSelector('.p2-form', { timeout: 15000 });
+      await p.click('#mode-advanced');   // signing lives in the advanced view
       await p.click('#load-demo');
       await p.waitForFunction(() => /valid/i.test(document.getElementById('valid-badge')?.textContent || ''), { timeout: 10000 }).catch(() => {});
       await p.evaluate(() => { document.getElementById('sign-card').open = true; });   // expand the collapsed Sign card

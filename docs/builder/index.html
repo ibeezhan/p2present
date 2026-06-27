@@ -36,10 +36,54 @@
     </nav>
   </header>
 
-  <main class="p2-builder">
+  <main class="p2-builder is-simple" id="builder-main">
     <!-- LEFT: the form -->
     <section class="p2-form" aria-label="Manifest fields">
-      <details class="p2-card" open>
+      <!-- Simple ⇄ Advanced view toggle. Simple is a guided 3-step flow; Advanced
+           exposes every manifest field. Both drive the same `state`. -->
+      <div class="p2-mode-switch" role="tablist" aria-label="Builder view">
+        <button type="button" id="mode-simple" class="p2-mode-tab is-on" role="tab" aria-selected="true">✨ Simple</button>
+        <button type="button" id="mode-advanced" class="p2-mode-tab" role="tab" aria-selected="false">⚙ Advanced</button>
+      </div>
+
+      <!-- SIMPLE: paste a video, paste your slides, grab chapters, capture timing. -->
+      <div class="p2-simp p2-simple-flow">
+        <div class="p2-card p2-simple-card" open>
+          <div class="p2-step">
+            <span class="p2-step-n">1</span>
+            <label class="p2-field"><span>Title</span><input id="s-title" type="text" placeholder="My talk" /></label>
+          </div>
+          <div class="p2-step">
+            <span class="p2-step-n">2</span>
+            <label class="p2-field"><span>Video URL</span>
+              <input id="s-video" type="text" inputmode="url" spellcheck="false" placeholder="YouTube link / ID · https://…/talk.mp4 · ipfs://CID · magnet:?xt=…" />
+              <small class="p2-hint" id="s-video-kind"></small>
+            </label>
+          </div>
+          <div class="p2-step">
+            <span class="p2-step-n">3</span>
+            <div class="p2-field"><span>Slides</span>
+              <div class="p2-simple-deck">
+                <select id="s-deck-type" aria-label="Slides type"><option value="pdf">PDF</option><option value="html">HTML</option><option value="embed">Embed</option></select>
+                <input id="s-deck" type="text" inputmode="url" spellcheck="false" placeholder="https://…/slides.pdf · ar://TXID/slides.pdf · ipfs://CID/…" />
+              </div>
+            </div>
+          </div>
+          <div class="p2-step">
+            <span class="p2-step-n">4</span>
+            <div class="p2-field"><span>Chapters → slide timing <span class="p2-hint">(optional)</span></span>
+              <div class="p2-row-actions">
+                <button type="button" class="p2-load" id="s-chapters-auto">✨ Auto-detect chapters</button>
+                <span class="p2-hint" id="s-chapters-status"></span>
+              </div>
+              <textarea id="s-chapters" rows="4" spellcheck="false" placeholder="Paste a chapter list — one per line:&#10;0:00 Title slide&#10;1:24 The problem&#10;3:10 The fix"></textarea>
+              <button type="button" class="p2-load" id="s-chapters-apply">Use these as timing</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <details class="p2-card p2-adv" open>
         <summary>Load / start over</summary>
         <p class="p2-hint">Start from the demo, or load an existing <code>p2present.json</code> to edit it.</p>
         <div class="p2-row-actions">
@@ -56,13 +100,13 @@
         <button type="button" class="p2-load" id="load-paste-btn">Load pasted JSON</button>
       </details>
 
-      <details class="p2-card" id="hosted-card" hidden>
+      <details class="p2-card p2-adv" id="hosted-card" hidden>
         <summary>📦 Hosted references <span class="p2-count" id="hosted-count"></span></summary>
         <p class="p2-hint">References you produced in the <a href="../host/">Host page</a>. Click one to copy, then paste it into a video / deck / subtitle source below.</p>
         <div id="hosted-list" class="p2-list"></div>
       </details>
 
-      <details class="p2-card" open>
+      <details class="p2-card p2-adv" open>
         <summary>Title &amp; metadata</summary>
         <label class="p2-field"><span>Title</span><input id="f-title" type="text" placeholder="My talk" /></label>
         <div class="p2-grid-2">
@@ -73,7 +117,7 @@
         </div>
       </details>
 
-      <details class="p2-card" open>
+      <details class="p2-card p2-adv" open>
         <summary>Video sources <span class="p2-count" id="count-video"></span></summary>
         <p class="p2-hint">Ordered fallback list — the player tries each until one loads.</p>
         <div id="list-video" class="p2-list"></div>
@@ -81,7 +125,7 @@
         <label class="p2-field"><span>Poster image URL (optional, mp4)</span><input id="f-poster" type="text" /></label>
       </details>
 
-      <details class="p2-card" open>
+      <details class="p2-card p2-adv" open>
         <summary>Deck</summary>
         <div class="p2-grid-2">
           <label class="p2-field"><span>Type</span>
@@ -93,7 +137,7 @@
         <button type="button" class="p2-add" data-add="deck">+ Add deck source</button>
       </details>
 
-      <details class="p2-card" open>
+      <details class="p2-card p2-adv" open>
         <summary>Timing <span class="p2-count" id="count-timing"></span></summary>
         <p class="p2-hint">Slide-boundary cues. Time is float seconds or "MM:SS" / "HH:MM:SS".</p>
         <div id="list-timing" class="p2-list"></div>
@@ -101,8 +145,14 @@
           <button type="button" class="p2-add" data-add="timing">+ Add cue</button>
           <button type="button" class="p2-load" id="sort-timing">Sort by time</button>
         </div>
+      </details>
+
+      <!-- Timing capture — shared by both views (it's the heart of the simple flow
+           and a power tool in the advanced one). -->
+      <details class="p2-card p2-capture-card" open>
+        <summary>🎬 Timing capture</summary>
+        <p class="p2-hint">Play the video, navigate to each slide, and stamp the moment it should change. Needs a loadable video + slides.</p>
         <div class="p2-capture" id="capture-panel" hidden>
-          <p class="p2-hint">Timing capture — play the video, then stamp the current time against the current slide.</p>
           <div id="capture-mount" class="p2-capture-mount"></div>
           <div class="p2-row-actions">
             <button type="button" class="p2-load p2-primary" id="capture-stamp">📍 Stamp current time → slide</button>
@@ -112,13 +162,13 @@
         <button type="button" class="p2-load" id="capture-toggle">🎬 Open timing-capture player</button>
       </details>
 
-      <details class="p2-card">
+      <details class="p2-card p2-adv">
         <summary>Subtitles <span class="p2-count" id="count-subs"></span></summary>
         <div id="list-subs" class="p2-list"></div>
         <button type="button" class="p2-add" data-add="subs">+ Add subtitle track</button>
       </details>
 
-      <details class="p2-card">
+      <details class="p2-card p2-adv">
         <summary>Resolvers (IPFS gateways / WebTorrent trackers)</summary>
         <p class="p2-hint">Optional. Leave empty to use the built-in defaults.</p>
         <div class="p2-field"><span>IPFS gateways (<code>{cid}</code> placeholder)</span>
@@ -131,7 +181,7 @@
         </div>
       </details>
 
-      <details class="p2-card" id="sign-card">
+      <details class="p2-card p2-adv" id="sign-card">
         <summary>🔏 Sign (optional) <span class="p2-count" id="sign-status"></span></summary>
         <p class="p2-hint">Prove who published this. The player verifies on load and shows a <strong>“✓ signed by …”</strong> badge — it never blocks playback. The signature covers the <em>whole</em> manifest, so if you edit anything after signing you’ll need to sign again. Keys are used locally and never leave your browser.</p>
 
@@ -161,7 +211,7 @@
         <button type="button" class="p2-load" id="sign-remove" hidden>✕ Remove signature</button>
       </details>
 
-      <details class="p2-card">
+      <details class="p2-card p2-adv">
         <summary>Layout</summary>
         <div class="p2-grid-2">
           <label class="p2-field"><span>Split (slides fraction 0.15–0.85)</span><input id="f-split" type="number" min="0.15" max="0.85" step="0.05" /></label>

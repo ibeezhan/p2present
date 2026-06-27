@@ -64,6 +64,35 @@
 .p2-load { display: inline-flex; align-items: center; }
 #load-file-label { cursor: pointer; }
 
+/* --- Simple ⇄ Advanced views --- */
+.p2-mode-switch {
+  display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px;
+  background: var(--panel-2); border: 1px solid var(--line); align-self: flex-start;
+}
+.p2-mode-tab {
+  background: transparent; color: var(--muted); border: 0; cursor: pointer;
+  padding: 7px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; font-family: inherit;
+}
+.p2-mode-tab.is-on { background: var(--accent-dim); color: var(--bg); }
+.p2-mode-tab:not(.is-on):hover { color: var(--fg); }
+
+/* view gating */
+.p2-builder.is-simple .p2-adv { display: none; }
+.p2-builder:not(.is-simple) .p2-simp { display: none; }
+
+/* the simple guided card */
+.p2-simple-flow { display: flex; flex-direction: column; gap: 12px; }
+.p2-simple-card { display: flex; flex-direction: column; gap: 4px; }
+.p2-step { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 8px 0; }
+.p2-step + .p2-step { border-top: 1px solid var(--line); }
+.p2-step-n {
+  display: grid; place-items: center; width: 26px; height: 26px; margin-top: 4px;
+  border-radius: 50%; background: var(--accent-dim); color: var(--bg);
+  font-size: 13px; font-weight: 700;
+}
+.p2-step .p2-field { margin: 0; }
+.p2-simple-deck { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+
 /* capture panel */
 .p2-capture {
   margin-top: 12px; padding: 12px; border: 1px solid var(--accent-dim);
