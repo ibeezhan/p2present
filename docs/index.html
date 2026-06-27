@@ -80,7 +80,7 @@
              SVG shares the artwork's 1254×1254 space so the dots sit exactly on
              the ring. mix-blend:screen drops the artwork's black backdrop. -->
         <figure class="hero-logo" aria-hidden="true">
-          <img class="hero-logo-base" src="brand/logo-hero-base.png" width="1254" height="1254" alt="" />
+          <img class="hero-logo-base" src="brand/logo-hero-cut.png" width="1254" height="1254" alt="" />
           <svg class="hero-orbit" viewBox="0 0 1254 1254" preserveAspectRatio="xMidYMid meet">
             <circle class="planet planet-cyan" cx="801.4" cy="914.6" r="26" />
             <circle class="planet planet-magenta" cx="485.7" cy="316.0" r="26" />
@@ -163,28 +163,28 @@
                   <stop offset="0" stop-color="#4fd1c5"/><stop offset=".5" stop-color="#7c6bff"/><stop offset="1" stop-color="#ff5cf0"/>
                 </linearGradient>
               </defs>
-              <!-- faint base wires from each chip to the player centre -->
+              <!-- faint base wires from each card up to the player centre -->
               <g class="wires">
-                <path d="M11,32 C26,34 38,40 50,42" pathLength="100"/>
-                <path d="M9,58 C24,54 38,46 50,42"  pathLength="100"/>
-                <path d="M12,82 C26,70 40,52 50,42" pathLength="100"/>
-                <path d="M89,38 C74,38 62,41 50,42" pathLength="100"/>
-                <path d="M90,72 C76,64 62,50 50,42" pathLength="100"/>
+                <path d="M10,84 C18,72 36,58 50,54"  pathLength="100"/>
+                <path d="M30,86 C34,76 44,60 50,54"  pathLength="100"/>
+                <path d="M50,90 C50,76 50,62 50,55"  pathLength="100"/>
+                <path d="M70,86 C66,76 56,60 50,54"  pathLength="100"/>
+                <path d="M90,84 C82,72 64,58 50,54"  pathLength="100"/>
               </g>
-              <!-- a single light packet travelling each wire toward the player -->
+              <!-- a single light packet travelling each wire up into the player -->
               <g class="pulses">
-                <path d="M11,32 C26,34 38,40 50,42" pathLength="100"/>
-                <path d="M9,58 C24,54 38,46 50,42"  pathLength="100"/>
-                <path d="M12,82 C26,70 40,52 50,42" pathLength="100"/>
-                <path d="M89,38 C74,38 62,41 50,42" pathLength="100"/>
-                <path d="M90,72 C76,64 62,50 50,42" pathLength="100"/>
+                <path d="M10,84 C18,72 36,58 50,54"  pathLength="100"/>
+                <path d="M30,86 C34,76 44,60 50,54"  pathLength="100"/>
+                <path d="M50,90 C50,76 50,62 50,55"  pathLength="100"/>
+                <path d="M70,86 C66,76 56,60 50,54"  pathLength="100"/>
+                <path d="M90,84 C82,72 64,58 50,54"  pathLength="100"/>
               </g>
             </svg>
-            <span class="src-node" data-src="youtube"    style="--x:11%;--y:32%"><span class="orb">▶</span><b>YouTube</b></span>
-            <span class="src-node" data-src="ipfs"       style="--x:9%;--y:58%"><span class="orb">🪐</span><b>IPFS</b></span>
-            <span class="src-node" data-src="webtorrent" style="--x:12%;--y:82%"><span class="orb">🌱</span><b>WebTorrent</b></span>
-            <span class="src-node" data-src="mp4"        style="--x:89%;--y:38%"><span class="orb">🎞️</span><b>MP4 / HTTP</b></span>
-            <span class="src-node" data-src="arweave"    style="--x:90%;--y:72%"><span class="orb">🜨</span><b>Arweave</b></span>
+            <span class="src-node" data-src="youtube"  style="--x:10%;--y:84%"><span class="orb">▶</span><span class="src-meta"><b>YouTube</b><i>hosted video link</i></span></span>
+            <span class="src-node" data-src="mp4"      style="--x:30%;--y:86%"><span class="orb">🎞️</span><span class="src-meta"><b>MP4 / HTTP</b><i>any direct file URL</i></span></span>
+            <span class="src-node" data-src="ipfs"     style="--x:50%;--y:90%"><span class="orb">🪐</span><span class="src-meta"><b>IPFS</b><i>content-addressed</i></span></span>
+            <span class="src-node" data-src="torrent"  style="--x:70%;--y:86%"><span class="orb">🌱</span><span class="src-meta"><b>Torrent</b><i>magnet · WebTorrent</i></span></span>
+            <span class="src-node" data-src="arweave"  style="--x:90%;--y:84%"><span class="orb">🜨</span><span class="src-meta"><b>Arweave</b><i>permanent storage</i></span></span>
           </div>
         </div>
 
