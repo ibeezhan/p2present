@@ -26,13 +26,18 @@
 <body>
   <header class="p2-header">
     <div class="p2-brand">
-      <a class="p2-home" href="../" title="p2present home" aria-label="p2present home"><img class="p2-logo" src="../brand/icon-32.png" width="32" height="32" alt="" /></a>
+      <button class="p2-home" id="brand-toggle" type="button" title="Toggle player header controls" aria-label="Toggle player header controls"><img class="p2-logo" src="../brand/icon-32.png" width="32" height="32" alt="" /></button>
       <button class="p2-shell-toggle" id="shell-toggle" type="button" aria-expanded="true" aria-label="Collapse player header controls" title="Collapse player header controls">
         <span class="p2-name">p2present</span>
       </button>
       <span class="p2-deck-title" id="deck-title"></span>
       <span class="p2-sig-badge" id="sig-badge" hidden></span>
     </div>
+    <nav class="p2-tools" aria-label="Player tools">
+      <a class="p2-tool" href="../builder/" title="Builder" aria-label="Builder">🛠</a>
+      <a class="p2-tool" href="../host/" title="Host assets" aria-label="Host assets">📤</a>
+      <a class="p2-tool" href="../docs/" title="Docs" aria-label="Docs">?</a>
+    </nav>
     <button
       type="button"
       class="p2-source-toggle"
@@ -41,7 +46,7 @@
       aria-controls="source-form"
       aria-label="Load a presentation from a URL"
       title="Load a presentation from a URL"
-    >🔗 Load URL</button>
+    >⊕</button>
     <form class="p2-source" id="source-form">
       <input
         id="source-input"
@@ -51,14 +56,16 @@
         placeholder="Paste a source — https://…/p2present.json · ipfs://CID · magnet:?xt=…"
         aria-label="Presentation source URL, IPFS CID, or magnet link"
       />
-      <button type="submit" class="p2-load">Load</button>
+      <button type="submit" class="p2-load p2-load-icon" title="Load source" aria-label="Load source">▶</button>
+    </form>
+    <div class="p2-actions">
       <button
         type="button"
         class="p2-load p2-save"
         id="save-btn"
         title="Save this presentation to the sharing service and copy a short link"
         aria-label="Save and share a short link"
-      >💾 Save &amp; share</button>
+      >💾</button>
       <div class="p2-share-wrap">
         <button
           type="button"
@@ -69,13 +76,13 @@
           aria-controls="share-menu"
           title="Share this presentation"
           aria-label="Share this presentation"
-        >🔗 Share</button>
+        >🔗</button>
         <div class="p2-share-menu" id="share-menu" role="menu" hidden>
           <button type="button" class="p2-share-item" id="share-whole" role="menuitem">🔗 Copy presentation link</button>
           <button type="button" class="p2-share-item" id="share-moment" role="menuitem">📍 Copy link to this moment</button>
         </div>
       </div>
-    </form>
+    </div>
   </header>
 
   <nav class="p2-nav" aria-label="Demos and tools">

@@ -33,8 +33,8 @@ body {
 
 /* --- header / resolver --- */
 .p2-header {
-  display: grid; grid-template-columns: minmax(220px, max-content) minmax(0, 1fr);
-  align-items: center; gap: 12px;
+  display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto auto;
+  align-items: center; gap: 8px;
   padding: 8px 14px;
   background:
     linear-gradient(135deg, rgba(79,209,197,.08), rgba(124,107,255,.06) 50%, rgba(255,92,240,.07)),
@@ -45,8 +45,12 @@ body {
   position: sticky; top: 0; z-index: 80;
 }
 .p2-brand { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; }
-.p2-logo, .p2-home img { width: 26px; height: 26px; border-radius: 7px; object-fit: contain; display: block; }
-.p2-home { display: inline-flex; line-height: 0; text-decoration: none; }
+.p2-logo, .p2-home img { width: 27px; height: 27px; border-radius: 8px; object-fit: contain; display: block; }
+.p2-home {
+  display: inline-flex; line-height: 0; text-decoration: none; padding: 0; border: 0;
+  background: transparent; cursor: pointer;
+}
+.p2-home:focus-visible { outline: 2px solid var(--accent-dim); border-radius: 9px; }
 .p2-shell-toggle {
   appearance: none; border: 0; padding: 0; margin: 0;
   background: transparent; color: var(--fg); cursor: pointer;
@@ -56,7 +60,7 @@ body {
 .p2-name { letter-spacing: 0.2px; white-space: nowrap; }
 .p2-deck-title {
   color: var(--muted); font-weight: 400; font-size: 13px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(42vw, 520px);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(50vw, 760px);
   transition: max-width .28s var(--ease), opacity .22s ease;
 }
 .p2-deck-title::before { content: "·"; margin-right: 8px; }
@@ -78,21 +82,49 @@ body {
 .p2-sig-badge.is-invalid { color: var(--error); border-color: var(--error); }
 @media (max-width: 560px) { .p2-sig-badge.is-unsigned { display: none; } }
 
+.p2-tools {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px;
+  background: rgba(255,255,255,.035);
+}
+.p2-tool {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
+  color: var(--fg); text-decoration: none; font-size: 15px;
+  border: 1px solid transparent;
+}
+.p2-tool:hover, .p2-tool:focus-visible {
+  border-color: rgba(79,209,197,.65); color: var(--accent); outline: none; text-decoration: none;
+  background: rgba(79,209,197,.08);
+}
+
 .p2-source {
-  display: grid; grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  display: none; grid-template-columns: minmax(210px, 36vw) auto;
   gap: 8px; min-width: 0; justify-self: stretch;
   transform-origin: right center;
   transition: opacity .24s ease, transform .28s var(--ease), max-width .32s var(--ease);
 }
+.p2-header.p2-source-open .p2-source { display: grid; }
+.p2-actions { display: inline-flex; align-items: center; gap: 8px; }
 .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) {
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr);
+  width: max-content; max-width: calc(100vw - 20px);
+  border-right: 1px solid rgba(255,255,255,.08);
+  border-bottom-right-radius: 18px;
 }
 .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source {
   max-width: 0; opacity: 0; transform: translateX(12px) scaleX(.92);
   overflow: hidden; pointer-events: none;
 }
-.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-deck-title {
-  max-width: min(55vw, 760px);
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-tools,
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source-toggle,
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-actions,
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-name,
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-deck-title,
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-sig-badge {
+  display: none;
+}
+.p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-logo {
+  animation: p2LogoJiggle 1.9s ease-in-out infinite;
 }
 .p2-source input {
   flex: 1; min-width: 0;
@@ -108,9 +140,11 @@ body {
 }
 .p2-load:hover, .p2-btn:hover { border-color: var(--accent); color: var(--accent); }
 .p2-load {
-  font-weight: 650; padding: 7px 12px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-weight: 650; padding: 7px 10px; min-width: 38px; border-radius: 12px;
   background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.11);
 }
+.p2-load-icon { color: var(--accent); }
 .p2-share, .p2-save { white-space: nowrap; }
 .p2-share:disabled, .p2-save:disabled { opacity: 0.45; cursor: default; }
 .p2-share:disabled:hover, .p2-save:disabled:hover { border-color: var(--line); color: var(--fg); }
@@ -173,6 +207,12 @@ body {
 @keyframes p2ToastIn { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes p2ToastOut { to { opacity: 0; transform: translateY(-6px) scale(.98); } }
 @keyframes p2Spin { to { transform: rotate(360deg); } }
+@keyframes p2LogoJiggle {
+  0%, 72%, 100% { transform: rotate(0deg) scale(1); }
+  78% { transform: rotate(-5deg) scale(1.04); }
+  84% { transform: rotate(5deg) scale(1.04); }
+  90% { transform: rotate(-3deg) scale(1.02); }
+}
 
 /* --- app / player --- */
 .p2-app { flex: 1; display: flex; min-height: 0; padding: 12px; }
@@ -504,7 +544,7 @@ body {
 
 /* resolver disclosure toggle (mobile only — desktop keeps the bar inline) */
 .p2-source-toggle {
-  display: none;
+  display: inline-flex;
   background: var(--panel-2); color: var(--fg);
   border: 1px solid var(--line); border-radius: var(--radius);
   padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: 600;
@@ -585,7 +625,7 @@ body.p2-maximized { overflow: hidden; }
 
 /* --- secondary nav: demo picker + tool links --- */
 .p2-nav {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: none; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 5px 14px; background: rgba(13,15,18,.78);
   border-bottom: 1px solid rgba(255,255,255,.07); font-size: 13px;
   -webkit-backdrop-filter: blur(12px) saturate(1.15);
@@ -628,11 +668,14 @@ body.p2-maximized { overflow: hidden; }
 
   /* Full-bleed: trim chrome so the player owns the viewport. */
   .p2-header {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     padding: 7px 10px; gap: 8px;
   }
   .p2-brand { min-width: 0; }
-  .p2-deck-title { max-width: 42vw; font-size: 12px; }
+  .p2-name { display: none; }
+  .p2-deck-title { max-width: 32vw; font-size: 12px; }
+  .p2-tools { gap: 3px; padding: 2px; }
+  .p2-tool { width: 31px; height: 31px; border-radius: 10px; font-size: 14px; }
   .p2-app { padding: 6px; }
   .p2-player { gap: 6px; }
   .p2-footer { display: none; }
@@ -642,16 +685,15 @@ body.p2-maximized { overflow: hidden; }
   .p2-source-toggle { display: inline-flex; }
   .p2-header .p2-source {
     grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     display: none;
     max-width: none; opacity: 1; transform: none; pointer-events: auto;
   }
-  .p2-header .p2-share-wrap { grid-column: 1 / -1; justify-self: stretch; }
-  .p2-header .p2-share-wrap .p2-share { width: 100%; }
+  .p2-actions { gap: 6px; }
   .p2-header.p2-source-open .p2-source { display: grid; }
   .p2-header.p2-source-open .p2-source-toggle { border-color: var(--accent); color: var(--accent); }
   .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 38px;
   }
   .p2-header.p2-shell-collapsed:not(.p2-shell-pinned):not(:hover):not(:focus-within) .p2-source {
     display: none;

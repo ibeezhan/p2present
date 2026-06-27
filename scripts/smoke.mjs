@@ -611,6 +611,7 @@ async function main() {
       const p = await newPage(context);
       await p.goto(`${ORIGIN}/app/`, { waitUntil: 'load' });
       // Open the source bar + type the p2p source, submit.
+      await p.click('#source-toggle');
       await p.fill('#source-input', src);
       // Capture the loading state shortly after submit.
       await p.click('.p2-load[type="submit"], .p2-load:not(.p2-share)');

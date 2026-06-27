@@ -38,6 +38,7 @@ const $status = document.getElementById('status');
 const $title = document.getElementById('deck-title');
 const $header = document.querySelector('.p2-header');
 const $shellToggle = document.getElementById('shell-toggle');
+const $brandToggle = document.getElementById('brand-toggle');
 const $sourceToggle = document.getElementById('source-toggle');
 const $share = document.getElementById('share-btn');
 const $shareMenu = document.getElementById('share-menu');
@@ -328,6 +329,12 @@ if ($shellToggle) {
     $shellToggle.setAttribute('aria-label', $shellToggle.title);
   };
   $shellToggle.addEventListener('click', () => {
+    const collapsed = $header.classList.contains('p2-shell-collapsed');
+    const pinned = $header.classList.contains('p2-shell-pinned');
+    if (!collapsed) setShellState({ collapsed: true });
+    else setShellState({ collapsed: true, pinned: !pinned });
+  });
+  $brandToggle?.addEventListener('click', () => {
     const collapsed = $header.classList.contains('p2-shell-collapsed');
     const pinned = $header.classList.contains('p2-shell-pinned');
     if (!collapsed) setShellState({ collapsed: true });
