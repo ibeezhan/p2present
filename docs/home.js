@@ -74,13 +74,28 @@ function applyStep(step) {
 
 function applySourceFlow(progress) {
   if (!sticky) return;
-  // Start before the final layout band so the sources are already present as the
-  // user arrives there instead of popping in after the scroll has effectively ended.
-  const start = 0.56;
-  const end = 0.94;
+  // Hold off until the layout has finished settling into PiP, THEN stream the
+  // sources in — the "finish the format, then plug in every source" beat. The
+  // window runs to near the end so the chips land fully lit (labels visible).
+  const start = 0.7;
+  const end = 0.97;
   flowIntensity = clamp((progress - start) / (end - start), 0, 1);
   sticky.style.setProperty('--flow', flowIntensity.toFixed(3));
   sticky.classList.toggle('sourcing', flowIntensity > 0.005);
+}
+
+// Hero brand mark: fade + lift it away as the user scrolls into the hero, and
+// retire the floating scroll cue once they've started moving.
+const heroLogo = document.querySelector('.hero-logo');
+const scrollCue = document.querySelector('.scroll-cue');
+function fadeHeroChrome() {
+  const y = window.scrollY || window.pageYOffset || 0;
+  if (heroLogo && !reduceMotion) {
+    const f = clamp(1 - y / (window.innerHeight * 0.6), 0, 1); // 1 at top → 0 by ~60vh
+    heroLogo.style.opacity = f.toFixed(3);
+    heroLogo.style.transform = `translateY(${((1 - f) * -28).toFixed(1)}px) scale(${(0.9 + 0.1 * f).toFixed(3)})`;
+  }
+  if (scrollCue) scrollCue.classList.toggle('is-gone', y > 80);
 }
 
 function onScroll() {
@@ -90,6 +105,7 @@ function onScroll() {
     const progress = computeProgress();
     applyStep(computeStep());
     applySourceFlow(progress);
+    fadeHeroChrome();
     ticking = false;
   });
 }
@@ -280,6 +296,7 @@ function boot() {
   // prime the morph + keep it in sync on scroll/resize
   applyStep(computeStep());
   applySourceFlow(computeProgress());
+  fadeHeroChrome();
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
 }

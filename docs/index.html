@@ -94,19 +94,28 @@
           <a class="btn btn-ghost" href="app/">Open the player</a>
         </div>
 
-        <!-- near-wordless 3-beat: the whole flow in three words + motion -->
-        <div class="beats" aria-label="Bring, sync, share">
-          <span class="beat"><span class="bi">📥</span><b>Bring</b></span>
+        <!-- 3-beat value story: sync → relive → outlive (p2p permanence) -->
+        <div class="beats" aria-label="In sync, relivable, immortal">
+          <span class="beat">
+            <span class="bi" aria-hidden="true">◎</span>
+            <span class="bt"><b>In sync</b><i>your deck rides the talk</i></span>
+          </span>
           <span class="flow" aria-hidden="true"></span>
-          <span class="beat"><span class="bi">🎬</span><b>Sync</b></span>
+          <span class="beat">
+            <span class="bi" aria-hidden="true">⟲</span>
+            <span class="bt"><b>Relivable</b><i>scrub to any second, together</i></span>
+          </span>
           <span class="flow" aria-hidden="true"></span>
-          <span class="beat"><span class="bi">🔗</span><b>Share</b></span>
+          <span class="beat">
+            <span class="bi" aria-hidden="true">∞</span>
+            <span class="bt"><b>Immortal</b><i>IPFS + torrent · no dead links</i></span>
+          </span>
         </div>
-
-        <!-- tiny, glyph-only scroll cue — no sentence labels -->
-        <div class="scroll-cue" aria-hidden="true"><span class="mouse"></span></div>
       </div>
     </section>
+
+    <!-- floating scroll cue, pinned bottom-right (outside the hero column) -->
+    <div class="scroll-cue" aria-hidden="true"><span class="mouse"></span></div>
 
     <!-- ============== SCROLL-MORPH SHOWCASE (centerpiece) ============== -->
     <!-- One tall scroll track, one continuous journey. The sticky stage pins a
@@ -142,8 +151,11 @@
             <div class="morph-bar"><span class="g">▶</span><div class="track"></div><span class="g">⛶</span></div>
           </div>
 
-          <!-- the climax: source nodes streaming into the player. Lives over the
-               sticky stage; fades in at the final scroll phase (.sourcing). -->
+          <!-- The climax: once the layout has finished morphing into PiP, the
+               supported source protocols light up as chips flanking the player and
+               stream a packet of data down each wire INTO it — "plays from any
+               source". Lives over the sticky stage; ignites at the final scroll
+               phase (.sourcing), intensifying with --flow. -->
           <div id="sources" class="sources-field" aria-label="Plays from any source">
             <svg class="streams" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               <defs>
@@ -151,17 +163,28 @@
                   <stop offset="0" stop-color="#4fd1c5"/><stop offset=".5" stop-color="#7c6bff"/><stop offset="1" stop-color="#ff5cf0"/>
                 </linearGradient>
               </defs>
-              <path d="M18,76 C24,62 36,48 50,40"/>
-              <path d="M78,74 C72,58 62,46 50,40"/>
-              <path d="M34,91 C37,72 43,55 50,40"/>
-              <path d="M88,91 C76,70 62,53 50,40"/>
-              <path d="M54,96 C54,76 52,56 50,40"/>
+              <!-- faint base wires from each chip to the player centre -->
+              <g class="wires">
+                <path d="M11,32 C26,34 38,40 50,42" pathLength="100"/>
+                <path d="M9,58 C24,54 38,46 50,42"  pathLength="100"/>
+                <path d="M12,82 C26,70 40,52 50,42" pathLength="100"/>
+                <path d="M89,38 C74,38 62,41 50,42" pathLength="100"/>
+                <path d="M90,72 C76,64 62,50 50,42" pathLength="100"/>
+              </g>
+              <!-- a single light packet travelling each wire toward the player -->
+              <g class="pulses">
+                <path d="M11,32 C26,34 38,40 50,42" pathLength="100"/>
+                <path d="M9,58 C24,54 38,46 50,42"  pathLength="100"/>
+                <path d="M12,82 C26,70 40,52 50,42" pathLength="100"/>
+                <path d="M89,38 C74,38 62,41 50,42" pathLength="100"/>
+                <path d="M90,72 C76,64 62,50 50,42" pathLength="100"/>
+              </g>
             </svg>
-            <span class="src-node" data-src="youtube"   style="--x:18%;--y:76%;--rise:10vh"><span class="orb">▶</span><b>YouTube</b></span>
-            <span class="src-node" data-src="mp4"       style="--x:78%;--y:74%;--rise:10vh"><span class="orb">🎞️</span><b>MP4 / HTTP</b></span>
-            <span class="src-node" data-src="ipfs"      style="--x:34%;--y:91%;--rise:12vh"><span class="orb">🪐</span><b>IPFS</b></span>
-            <span class="src-node" data-src="webtorrent" style="--x:88%;--y:91%;--rise:12vh"><span class="orb">🌱</span><b>WebTorrent</b></span>
-            <span class="src-node" data-src="arweave"   style="--x:54%;--y:96%;--rise:13vh"><span class="orb">🜨</span><b>Arweave</b></span>
+            <span class="src-node" data-src="youtube"    style="--x:11%;--y:32%"><span class="orb">▶</span><b>YouTube</b></span>
+            <span class="src-node" data-src="ipfs"       style="--x:9%;--y:58%"><span class="orb">🪐</span><b>IPFS</b></span>
+            <span class="src-node" data-src="webtorrent" style="--x:12%;--y:82%"><span class="orb">🌱</span><b>WebTorrent</b></span>
+            <span class="src-node" data-src="mp4"        style="--x:89%;--y:38%"><span class="orb">🎞️</span><b>MP4 / HTTP</b></span>
+            <span class="src-node" data-src="arweave"    style="--x:90%;--y:72%"><span class="orb">🜨</span><b>Arweave</b></span>
           </div>
         </div>
 
@@ -225,14 +248,26 @@
             <a href="https://github.com/ibeezhan/p2present/blob/main/ROADMAP.md" rel="noopener">🗺 Roadmap</a>
           </div>
         </div>
-        <!-- an animated "forks radiating from one root" glyph — graphics over a code block -->
+        <!-- "fork it, host it, keep it": one source repo forks into independent
+             self-hosted copies. A packet runs out each branch from the repo to a
+             copy; the copies then glow on their own — alive without the origin. -->
         <div class="fork-viz reveal" data-delay="1" aria-hidden="true">
-          <span class="root"></span>
-          <span class="spark" style="--a:-46deg"></span>
-          <span class="spark" style="--a:-18deg"></span>
-          <span class="spark" style="--a:14deg"></span>
-          <span class="spark" style="--a:42deg"></span>
-          <span class="node n1"></span><span class="node n2"></span><span class="node n3"></span><span class="node n4"></span>
+          <svg class="fork-wires" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <g class="fwire">
+              <path d="M9,50 L83,20" pathLength="100"/>
+              <path d="M9,50 L89,50" pathLength="100"/>
+              <path d="M9,50 L83,80" pathLength="100"/>
+            </g>
+            <g class="fpulse">
+              <path d="M9,50 L83,20" pathLength="100"/>
+              <path d="M9,50 L89,50" pathLength="100"/>
+              <path d="M9,50 L83,80" pathLength="100"/>
+            </g>
+          </svg>
+          <span class="origin"><span class="g">⑂</span><b>repo</b></span>
+          <span class="fork" style="--fx:83%;--fy:20%"><span class="g">🌐</span><b>your copy</b></span>
+          <span class="fork" style="--fx:89%;--fy:50%"><span class="g">🌐</span><b>your copy</b></span>
+          <span class="fork" style="--fx:83%;--fy:80%"><span class="g">🌐</span><b>your copy</b></span>
         </div>
       </div>
     </section>
