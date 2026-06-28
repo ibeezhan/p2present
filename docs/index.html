@@ -163,28 +163,28 @@
                   <stop offset="0" stop-color="#4fd1c5"/><stop offset=".5" stop-color="#7c6bff"/><stop offset="1" stop-color="#ff5cf0"/>
                 </linearGradient>
               </defs>
-              <!-- faint base wires from each card up to the player centre -->
+              <!-- faint base wires from each card to the player centre -->
               <g class="wires">
-                <path d="M10,84 C18,72 36,58 50,54"  pathLength="100"/>
-                <path d="M30,86 C34,76 44,60 50,54"  pathLength="100"/>
-                <path d="M50,90 C50,76 50,62 50,55"  pathLength="100"/>
-                <path d="M70,86 C66,76 56,60 50,54"  pathLength="100"/>
-                <path d="M90,84 C82,72 64,58 50,54"  pathLength="100"/>
+                <path d="M7,40 C24,42 38,44 50,44"  pathLength="100"/>
+                <path d="M10,74 C26,64 42,50 50,45" pathLength="100"/>
+                <path d="M50,91 C50,74 50,56 50,47" pathLength="100"/>
+                <path d="M90,74 C74,64 58,50 50,45" pathLength="100"/>
+                <path d="M93,40 C76,42 62,44 50,44" pathLength="100"/>
               </g>
-              <!-- a single light packet travelling each wire up into the player -->
+              <!-- a clean light packet travelling each wire into the player -->
               <g class="pulses">
-                <path d="M10,84 C18,72 36,58 50,54"  pathLength="100"/>
-                <path d="M30,86 C34,76 44,60 50,54"  pathLength="100"/>
-                <path d="M50,90 C50,76 50,62 50,55"  pathLength="100"/>
-                <path d="M70,86 C66,76 56,60 50,54"  pathLength="100"/>
-                <path d="M90,84 C82,72 64,58 50,54"  pathLength="100"/>
+                <path d="M7,40 C24,42 38,44 50,44"  pathLength="100"/>
+                <path d="M10,74 C26,64 42,50 50,45" pathLength="100"/>
+                <path d="M50,91 C50,74 50,56 50,47" pathLength="100"/>
+                <path d="M90,74 C74,64 58,50 50,45" pathLength="100"/>
+                <path d="M93,40 C76,42 62,44 50,44" pathLength="100"/>
               </g>
             </svg>
-            <span class="src-node" data-src="youtube"  style="--x:10%;--y:84%"><span class="orb">▶</span><span class="src-meta"><b>YouTube</b><i>hosted video link</i></span></span>
-            <span class="src-node" data-src="mp4"      style="--x:30%;--y:86%"><span class="orb">🎞️</span><span class="src-meta"><b>MP4 / HTTP</b><i>any direct file URL</i></span></span>
-            <span class="src-node" data-src="ipfs"     style="--x:50%;--y:90%"><span class="orb">🪐</span><span class="src-meta"><b>IPFS</b><i>content-addressed</i></span></span>
-            <span class="src-node" data-src="torrent"  style="--x:70%;--y:86%"><span class="orb">🌱</span><span class="src-meta"><b>Torrent</b><i>magnet · WebTorrent</i></span></span>
-            <span class="src-node" data-src="arweave"  style="--x:90%;--y:84%"><span class="orb">🜨</span><span class="src-meta"><b>Arweave</b><i>permanent storage</i></span></span>
+            <span class="src-node" data-src="youtube"  style="--x:7%;--y:40%;--dx:12%;--dy:41%"><span class="orb">▶</span><span class="src-meta"><b>YouTube</b><i>hosted video link</i></span></span>
+            <span class="src-node" data-src="mp4"      style="--x:10%;--y:74%;--dx:16%;--dy:67%"><span class="orb">🎞️</span><span class="src-meta"><b>MP4 / HTTP</b><i>any direct file URL</i></span></span>
+            <span class="src-node" data-src="ipfs"     style="--x:50%;--y:91%;--dx:50%;--dy:80%"><span class="orb">🪐</span><span class="src-meta"><b>IPFS</b><i>content-addressed</i></span></span>
+            <span class="src-node" data-src="torrent"  style="--x:90%;--y:74%;--dx:84%;--dy:67%"><span class="orb">🌱</span><span class="src-meta"><b>Torrent</b><i>magnet · WebTorrent</i></span></span>
+            <span class="src-node" data-src="arweave"  style="--x:93%;--y:40%;--dx:88%;--dy:41%"><span class="orb">🜨</span><span class="src-meta"><b>Arweave</b><i>permanent storage</i></span></span>
           </div>
         </div>
 
@@ -248,26 +248,32 @@
             <a href="https://github.com/ibeezhan/p2present/blob/main/ROADMAP.md" rel="noopener">🗺 Roadmap</a>
           </div>
         </div>
-        <!-- "fork it, host it, keep it": one source repo forks into independent
-             self-hosted copies. A packet runs out each branch from the repo to a
-             copy; the copies then glow on their own — alive without the origin. -->
+        <!-- "host it anywhere": one static build deploys to any host. A packet runs
+             out each branch from your site to a target, which then glows on its own —
+             GitHub Pages, IPFS, Arweave, your own box: same files, no lock-in. -->
         <div class="fork-viz reveal" data-delay="1" aria-hidden="true">
           <svg class="fork-wires" viewBox="0 0 100 100" preserveAspectRatio="none">
             <g class="fwire">
-              <path d="M9,50 L83,20" pathLength="100"/>
-              <path d="M9,50 L89,50" pathLength="100"/>
-              <path d="M9,50 L83,80" pathLength="100"/>
+              <path d="M11,50 L80,14" pathLength="100"/>
+              <path d="M11,50 L88,38" pathLength="100"/>
+              <path d="M11,50 L88,62" pathLength="100"/>
+              <path d="M11,50 L80,86" pathLength="100"/>
             </g>
             <g class="fpulse">
-              <path d="M9,50 L83,20" pathLength="100"/>
-              <path d="M9,50 L89,50" pathLength="100"/>
-              <path d="M9,50 L83,80" pathLength="100"/>
+              <path d="M11,50 L80,14" pathLength="100"/>
+              <path d="M11,50 L88,38" pathLength="100"/>
+              <path d="M11,50 L88,62" pathLength="100"/>
+              <path d="M11,50 L80,86" pathLength="100"/>
             </g>
           </svg>
-          <span class="origin"><span class="g">⑂</span><b>repo</b></span>
-          <span class="fork" style="--fx:83%;--fy:20%"><span class="g">🌐</span><b>your copy</b></span>
-          <span class="fork" style="--fx:89%;--fy:50%"><span class="g">🌐</span><b>your copy</b></span>
-          <span class="fork" style="--fx:83%;--fy:80%"><span class="g">🌐</span><b>your copy</b></span>
+          <span class="origin">
+            <span class="g"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17M7 7h.01M9.5 7h.01"/></svg></span>
+            <b>your site</b>
+          </span>
+          <span class="fork" style="--fx:80%;--fy:14%"><span class="g">🐙</span><b>GitHub Pages</b></span>
+          <span class="fork" style="--fx:88%;--fy:38%"><span class="g">🪐</span><b>IPFS</b></span>
+          <span class="fork" style="--fx:88%;--fy:62%"><span class="g">🜨</span><b>Arweave</b></span>
+          <span class="fork" style="--fx:80%;--fy:86%"><span class="g">🖥️</span><b>your server</b></span>
         </div>
       </div>
     </section>

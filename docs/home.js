@@ -95,7 +95,13 @@ function fadeHeroChrome() {
     heroLogo.style.opacity = f.toFixed(3);
     heroLogo.style.transform = `translateY(${((1 - f) * -28).toFixed(1)}px) scale(${(0.9 + 0.1 * f).toFixed(3)})`;
   }
-  if (scrollCue) scrollCue.classList.toggle('is-gone', y > 80);
+  // Keep the scroll cue on-screen as a persistent hint until the reader is almost
+  // at the end of the page (within ~1 viewport of the bottom), then retire it.
+  if (scrollCue) {
+    const doc = document.documentElement;
+    const nearBottom = (y + window.innerHeight) >= (doc.scrollHeight - window.innerHeight * 1.1);
+    scrollCue.classList.toggle('is-gone', nearBottom);
+  }
 }
 
 function onScroll() {
